@@ -150,7 +150,7 @@ const measure = (p, W) => p.evaluate(({W}) => {
     await p.waitForTimeout(300);
     const marks = await p.$$eval("#pageStack .pbreak", e => e.map(x => x.getAttribute("data-label")));
     ok(marks.length > 0, `a long sheet shows where the printer cuts: ${JSON.stringify(marks)}`);
-    ok(marks[0] === "page 2", `the first marker is labelled page 2 (got ${marks[0]})`);
+    ok(marks[0] === "page 2", `the first marker is labeled page 2 (got ${marks[0]})`);
     await ctx.close();
   }
 
@@ -199,7 +199,7 @@ const measure = (p, W) => p.evaluate(({W}) => {
   }
 
   // ---------- 4c. columns survive pagination ----------
-  // WebKit honours CSS multicolumn on screen and drops it once it paginates,
+  // WebKit honors CSS multicolumn on screen and drops it once it paginates,
   // so an iPhone showed two tidy columns and printed one long one across two
   // sheets. Chromium handles multicol in print, so no rendering check here can
   // catch a regression to it; the guard is that the stylesheet never asks for

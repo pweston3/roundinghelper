@@ -478,15 +478,15 @@ for(const findplace of [true, false]) for(const scaffold of [true, false]){
 
       } else if(/between\?/.test(ask)){
         seenStages.push("pair");
-        ok($("askTop").hidden, `${tag} L${level}: neighbour question sits with its buttons`);
+        ok($("askTop").hidden, `${tag} L${level}: neighbor question sits with its buttons`);
         ok(!$("linewrap").classList.contains("recede"),
-          `${tag} L${level}: number line at full strength for the neighbour step`);
+          `${tag} L${level}: number line at full strength for the neighbor step`);
         const btns = [...$("choices").children];
         let moved = false;
         for(const b of btns){ b.click(); if(b.classList.contains("right")){ moved = true; break; } }
-        ok(moved, `${tag} L${level}: a neighbour pair was accepted`);
+        ok(moved, `${tag} L${level}: a neighbor pair was accepted`);
         if(!moved) break;
-        ok(advance($), `${tag} L${level}: Keep going advanced the neighbour step`);
+        ok(advance($), `${tag} L${level}: Keep going advanced the neighbor step`);
 
       } else if(/closer to/.test(ask)){
         seenStages.push("final");
@@ -507,7 +507,7 @@ for(const findplace of [true, false]) for(const scaffold of [true, false]){
     ok(done, `${tag} L${level}: question completed (steps: ${seenStages.join(">") || "none"})`);
     ok(seenStages.includes("place") === findplace, `${tag} L${level}: place step present == findplace`);
     ok(seenStages.includes("decider") === findplace, `${tag} L${level}: decider step present == findplace`);
-    ok(seenStages.includes("pair") === scaffold, `${tag} L${level}: neighbour step present == scaffold`);
+    ok(seenStages.includes("pair") === scaffold, `${tag} L${level}: neighbor step present == scaffold`);
   }
 }
 

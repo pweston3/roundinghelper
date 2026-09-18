@@ -684,8 +684,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
         <div class="hubfoot">
           <a href="/how-to-round/">How to round numbers</a>
-          <span class="sep">&middot;</span>
-          <a href="/how-to-round/#the-mistake-most-children-make">The mistake most children make</a>
+          <p class="quiet" style="margin:2px 0 0">The method this practice follows, written out for grown-ups.</p>
         </div>
       </div>
     </div>
@@ -894,7 +893,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   // while the rest ran at 16%.
   var HALF_RATE = 0.14;
   // Halfway always rounds up, so the rest has to lean the other way or the
-  // whole set tilts. It did: "always tap the bigger neighbour" scored 60%, and
+  // whole set tilts. It did: "always tap the bigger neighbor" scored 60%, and
   // a kid could stop reasoning entirely and still look fluent.
   // Derived, so changing HALF_RATE keeps the set balanced.
   var UP_RATE = (0.5 - HALF_RATE) / (1 - HALF_RATE);
@@ -911,7 +910,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     // offset of 1..p-1 also means the number is never already round.
     var lo = Math.floor(n/p)*p, half = p/2, r;
     if(Math.random() < HALF_RATE){
-      r = half;                                             // sits dead centre
+      r = half;                                             // sits dead center
     }else if(Math.random() < UP_RATE){
       r = half + 1 + Math.floor(Math.random()*(half - 1));  // goes up
     }else{
@@ -940,7 +939,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
             lo:lo, hi:hi, mid:mid, answer:(n >= mid ? hi : lo), exact:(n === mid), pairs:pairs};
   }
 
-  // Keep a label centred on its point, but never let it run past the card edge.
+  // Keep a label centered on its point, but never let it run past the card edge.
   // Falls back to percent positioning when the rail has no measurable width.
   function railBox(ids){
     var rail = $(ids.marker).parentNode;
@@ -1308,7 +1307,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   }
 
   // A digit question goes in the slot under the digits; a question about the
-  // two neighbours goes above its own buttons. The question always sits next
+  // two neighbors goes above its own buttons. The question always sits next
   // to the thing it is asking about.
   // Once a digit step is answered the digits stop being tappable, so the
   // instruction telling the kid to tap them has to go too.
@@ -1613,7 +1612,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
   // One stylesheet for the document, used by the on-screen page and by the
   // print window alike. Everything is scoped to .sheetdoc and uses paper
-  // colours, never a theme variable, because it is a picture of a printed
+  // colors, never a theme variable, because it is a picture of a printed
   // page and not part of the app's surface.
   var SHEET_CSS =
     '.sheetdoc{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;' +
@@ -1626,7 +1625,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     '.sheetdoc h3{font-size:15px;font-weight:700;margin:17px 0 8px;break-after:avoid}' +
     '.sheetdoc h3:first-of-type{margin-top:0}' +
     // Columns are laid out as real side-by-side lists, never with CSS
-    // multicolumn. WebKit honours `columns` on screen and drops it in its
+    // multicolumn. WebKit honors `columns` on screen and drops it in its
     // paginated print context, so an iPhone showed two tidy columns and then
     // printed one long one over two sheets.
     '.sheetdoc .sec{break-inside:avoid;page-break-inside:avoid}' +
@@ -1717,7 +1716,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
   // The page is laid out at its real width and then scaled, so the preview is
   // the printout rather than a narrow reflow of it. Reflowing was the old
-  // behaviour and it made the answer rules collapse to stubs on a phone.
+  // behavior and it made the answer rules collapse to stubs on a phone.
   function fitPreview(){
     var wrap = $("pageWrap"), stack = $("pageStack");
     if(wrap.hidden) return;
@@ -1822,6 +1821,16 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     $("sheetview").hidden = which !== "sheet";
     $("mHub").setAttribute("aria-pressed", which === "practice" ? "false" : "true");
     if(which === "lab") updateLab();
+    // Keep the URL honest so /#grown-ups is a real address a prose page can
+    // link to, and so leaving the hub does not leave a stale hash behind that
+    // would reopen it on the next reload. replaceState, not a hash assignment,
+    // or every screen change would stack a history entry.
+    try{
+      var want = which === "hub" ? "#grown-ups" : "";
+      if((window.location.hash || "") !== want){
+        history.replaceState(null, "", window.location.pathname + window.location.search + want);
+      }
+    }catch(e){}
     window.scrollTo(0,0);
   }
   $("mHub").onclick = function(){ setMode("hub"); };
@@ -1845,7 +1854,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   };
 
   renderSheetOptions();
-  setMode(state.seenIntro ? "practice" : "intro");
+  function startMode(){
+    if(window.location.hash === "#grown-ups") return "hub";
+    return state.seenIntro ? "practice" : "intro";
+  }
+  window.addEventListener("hashchange", function(){
+    if(window.location.hash === "#grown-ups") setMode("hub");
+  });
+  setMode(startMode());
 
   renderTally();
   renderChips();

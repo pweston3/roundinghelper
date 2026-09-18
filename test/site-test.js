@@ -66,10 +66,54 @@ const ok=(c,m)=>{checks++;console.log((c?"  ok   ":"  FAIL ")+m);if(!c)fails++;}
   await p.reload(); await p.waitForTimeout(300);
   ok(await p.locator("#practice .hubfoot").count()===0, "no footer on the kid's practice screen");
   await p.click("#mHub"); await p.waitForTimeout(200);
-  ok(await p.locator("#hub .hubfoot a").count()===2, "two links on the grown-ups page");
+  const footLinks = await p.$$eval("#hub .hubfoot a", els => els.map(a => a.textContent.trim()));
+  ok(footLinks.length === 1, `one link on the grown-ups page (${JSON.stringify(footLinks)})`);
+  // a link is an invitation, so it should not be phrased as a failure
+  ok(!/mistake|wrong|error|fail|problem/i.test(footLinks.join(" ")),
+    `and it reads as an invitation rather than a negative (${JSON.stringify(footLinks)})`);
   const href = await p.locator("#hub .hubfoot a").first().getAttribute("href");
   const r2 = await p.goto(base + href.replace(/^\//,""));
   ok(r2.status()===200, `and the first one goes somewhere real (${href} -> ${r2.status()})`);
+
+  console.log("\n[the round trip]");
+  // The prose page is reached from the grown-ups screen, so "back" has to
+  // return there rather than dumping the reader on the kid's practice screen.
+  await p.goto(base);
+  await p.evaluate(()=>localStorage.setItem("rounding-v2",JSON.stringify({seenIntro:true})));
+  await p.reload(); await p.waitForTimeout(250);
+  await p.click("#mHub"); await p.waitForTimeout(200);
+  ok(new URL(p.url()).hash === "#grown-ups", `opening the grown-ups screen names itself in the URL (${new URL(p.url()).hash || "none"})`);
+
+  await p.click("#hub .hubfoot a"); await p.waitForTimeout(400);
+  ok(p.url().includes("/how-to-round/"), "its link reaches the prose page");
+  const backLabel = (await p.textContent(".topbar .practice")).trim();
+  ok(backLabel === "Grown-ups", `the prose page's topbar carries the same label as the app's (${backLabel})`);
+
+  await p.click(".topbar .practice"); await p.waitForTimeout(500);
+  ok(await p.locator("#hub").isVisible(), "and it lands back on the grown-ups screen, not the practice screen");
+  ok(!(await p.locator("#practice").isVisible()), "the kid's screen is not what a grown-up gets dropped onto");
+
+  // leaving must not strand the hash, or a reload would reopen the hub
+  await p.click("#back0"); await p.waitForTimeout(250);
+  ok(new URL(p.url()).hash === "", `leaving clears the hash (${new URL(p.url()).hash || "none"})`);
+  await p.reload(); await p.waitForTimeout(300);
+  ok(await p.locator("#practice").isVisible(), "so a reload returns to practice");
+
+  console.log("\n[American spelling]");
+  {
+    const pages = [base, base+"how-to-round/"];
+    const bad = /\b(practis(e|ing|ed)|neighbour|colour|centre|honour|behaviour|whilst|amongst|labelled)\b/i;
+    for(const u of pages){
+      await p.goto(u); await p.waitForTimeout(200);
+      const text = await p.evaluate(()=>{
+        const c=document.body.cloneNode(true);
+        c.querySelectorAll("script,style").forEach(e=>e.remove());
+        return c.textContent;
+      });
+      const hit = text.match(bad);
+      ok(!hit, `${u.replace(base,"/")} uses American spelling${hit?` (found "${hit[0]}")`:""}`);
+    }
+  }
 
   console.log("\n[offline]");
   await p.goto(base);

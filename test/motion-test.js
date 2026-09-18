@@ -32,7 +32,7 @@ async function play(p, wantCorrect){
       // Work out which button is which from the marker, so a deliberate miss
       // stays a miss. Clicking blind locks the choices the moment it is right.
       const frac = await p.evaluate(() => parseFloat(document.getElementById("marker").style.left));
-      const correctIdx = frac >= 50 ? 1 : 0;      // at or past halfway the answer is the upper neighbour
+      const correctIdx = frac >= 50 ? 1 : 0;      // at or past halfway the answer is the upper neighbor
       const idx = wantCorrect ? correctIdx : 1 - correctIdx;
       await p.locator("#choices .choice").nth(idx).click();
       const got = await p.locator("#choices .choice").nth(idx)

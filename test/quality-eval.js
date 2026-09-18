@@ -4,7 +4,7 @@
 // good", which is a different question and the one that matters in a
 // classroom. It samples thousands of real questions per level and checks the
 // shape of the set: how often the halfway case comes up, whether the answer
-// leans to one neighbour, whether a kid sees the same number twice in a
+// leans to one neighbor, whether a kid sees the same number twice in a
 // sitting, and whether a lazy strategy beats reasoning.
 //
 //   node test/quality-eval.js            (default sample)
@@ -37,7 +37,7 @@ const PLACE_VALUE = {
 
 // Independent half-up rounding on the displayed string, in integers only, so
 // this never shares a line of arithmetic with the app it is checking.
-function analyse(shown, placeName){
+function analyze(shown, placeName){
   const p = PLACE_VALUE[placeName];
   const bare = shown.replace(/,/g, "");
   const dec = (bare.split(".")[1] || "").length;
@@ -82,12 +82,12 @@ for(let lv = 0; lv < chips().length; lv++){
     const placeName = $("prompt").textContent.replace("Round to the nearest ", "").trim();
 
     ok(PLACE_VALUE[placeName] !== undefined, `${levelNames[lv]}: unknown place "${placeName}"`);
-    const a = analyse(shown, placeName);
+    const a = analyze(shown, placeName);
 
     // --- correctness invariants, on every single sample ---
-    ok(a.lo <= a.n && a.n < a.hi, `${levelNames[lv]}: ${shown} is not between its neighbours`);
-    ok(a.hi - a.lo === a.pu, `${levelNames[lv]}: neighbours for ${shown} are not one place apart`);
-    ok(a.answer === a.lo || a.answer === a.hi, `${levelNames[lv]}: ${shown} rounds to neither neighbour`);
+    ok(a.lo <= a.n && a.n < a.hi, `${levelNames[lv]}: ${shown} is not between its neighbors`);
+    ok(a.hi - a.lo === a.pu, `${levelNames[lv]}: neighbors for ${shown} are not one place apart`);
+    ok(a.answer === a.lo || a.answer === a.hi, `${levelNames[lv]}: ${shown} rounds to neither neighbor`);
     ok(a.n % a.pu !== 0n, `${levelNames[lv]}: ${shown} is already round, so there is nothing to do`);
     if(!shown.includes(".")){
       ok(a.value <= 1000000, `${levelNames[lv]}: ${shown} exceeds the 1,000,000 cap`);
@@ -120,16 +120,16 @@ for(let lv = 0; lv < chips().length; lv++){
   );
 
   // --- quality bands ---
-  // The halfway case is worth practising and worth not drowning in.
+  // The halfway case is worth practicing and worth not drowning in.
   band(halfRate, 0.08, 0.20, `${levelNames[lv]}: halfway rate`);
-  // A kid who always taps the bigger neighbour should do no better than a coin.
-  band(upRate, 0.44, 0.56, `${levelNames[lv]}: answer is the upper neighbour`);
+  // A kid who always taps the bigger neighbor should do no better than a coin.
+  band(upRate, 0.44, 0.56, `${levelNames[lv]}: answer is the upper neighbor`);
 }
 
 console.log("-".repeat(70));
 const upAll = overall.up / overall.n;
 console.log(`all levels        ${fmtPct(overall.half / overall.n).padStart(5)}${fmtPct(upAll).padStart(12)}`);
-console.log(`\n"always tap the bigger neighbour" scores ${fmtPct(upAll)}`);
+console.log(`\n"always tap the bigger neighbor" scores ${fmtPct(upAll)}`);
 
 band(upAll, 0.46, 0.54, 'the lazy "always bigger" strategy');
 

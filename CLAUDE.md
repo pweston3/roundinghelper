@@ -73,7 +73,7 @@ Why it's ordered this way:
   below the line, where the two nearest numbers on screen were the end labels,
   and a 4th grader tapped those instead. The line also dims while a digit is
   the question, so it stops competing for the tap.
-- **No arrow pointing up at the digits.** There was one. Centred under the
+- **No arrow pointing up at the digits.** There was one. Centered under the
   row, it lands under whichever digit happens to sit in the middle, so on
   4,245 it pointed straight at the hundreds digit and gave the answer away.
   Anything that singles out one digit before the kid has chosen is the bug,
@@ -123,6 +123,13 @@ cannot see an animation.
 
 - Written for a 9-year-old. Short sentences, no em-dash clauses, "less than 5"
   rather than "under 5."
+- **American spelling everywhere**, in the copy, the comments and the tests:
+  practicing, neighbor, color, center. `test/site-test.js` checks the rendered
+  text of every page. `OFL.txt` and `LICENSE` are verbatim legal texts and are
+  left alone.
+- **A link is an invitation, so don't phrase one as a failure.** The guide was
+  linked as "The mistake most children make", which is a fine heading on the
+  page and a poor thing to ask someone to click.
 - Say "went up" and "stayed," never "round up" and "round down." Rounding up
   changes the digit and rounding down doesn't, and students change it anyway.
 - Never imply the answer ends at the underlined digit. It doesn't — the digits
@@ -139,7 +146,7 @@ cannot see an animation.
   violation, not a shortcut. `test/dom-test.js` checks each answer against the
   hub's text, and that the block parses at all, since malformed JSON-LD fails
   silently.
-- **Never use CSS multicolumn on the worksheet.** WebKit honours `columns` on
+- **Never use CSS multicolumn on the worksheet.** WebKit honors `columns` on
   screen and drops it once it paginates, so an iPhone showed two tidy columns
   in the preview and then printed one long column across two sheets. The
   problems and the answer key are built as real side-by-side lists instead.
@@ -182,7 +189,7 @@ cannot see an animation.
   with `no-cache` it could not see this happen, and once did not.
 - **The service worker is network-first for the page, on purpose.** A cached
   build can therefore never stick, which is the usual way a service worker
-  ruins a static site. Do not "optimise" it to cache-first. `test/sw-test.js`
+  ruins a static site. Do not "optimize" it to cache-first. `test/sw-test.js`
   fails if you do: it deploys a new build and asserts the new one wins, both
   online and on the next offline load. Bump `VERSION` in `sw.js` when the
   precache list changes, so stale entries get evicted.
@@ -221,6 +228,14 @@ shares one URL and search engines have nothing to rank. They share `site.css`
 and `outfit.woff2`, both same origin, so no third party is involved. `sw.js`
 precaches them, and its `VERSION` needs bumping whenever that list changes.
 
+The prose pages hang off the grown-ups page, so their topbar carries the same
+"Grown-ups" button the app does and returns there rather than to the practice
+screen. `/#grown-ups` is a real address: `setMode` writes it with
+`replaceState` on the way in and clears it on the way out, so a link can open
+that screen directly and leaving cannot strand a hash that would reopen it on
+the next reload. A reader should land back where they were, not on a child's
+screen.
+
 Links to them live on the grown-ups page and on the prose pages, never on the
 kid's practice screen. Crawlers follow links inside hidden markup perfectly
 well, so putting grown-up navigation in front of a child buys nothing. The
@@ -238,8 +253,8 @@ node -e "const {JSDOM}=require('jsdom'); /* load index.html, click through */"
 `test/quality-eval.js` (`npm run eval`) is the one to run before a classroom
 uses this. It samples thousands of real questions per level and checks the
 shape of the set rather than single answers: the halfway rate, whether the
-answer leans to one neighbour, how often a number repeats inside a sitting.
-It found that "always tap the bigger neighbour" scored 60%, because the old
+answer leans to one neighbor, how often a number repeats inside a sitting.
+It found that "always tap the bigger neighbor" scored 60%, because the old
 generator injected 16% halfway cases on top of the ones that occur naturally
 and halfway always rounds up. `HALF_RATE` and the derived `UP_RATE` in
 `makeQuestion` hold it at a coin flip; change `HALF_RATE` and the balance
