@@ -140,6 +140,31 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
   }
 }
 
+// ---------- B2. every level is pickable straight away ----------
+{
+  const {d, $} = boot();
+  const chips = [...d.querySelectorAll(".chip")];
+  ok(chips.length === 10, `10 level chips, got ${chips.length}`);
+  ok(chips.every(c => !c.classList.contains("locked")), "no chip is locked");
+  ok(chips.every(c => !/\u{1F512}/u.test(c.textContent)), "no padlock glyphs");
+  ok(!$("unlockall"), "the unlock-all link is gone");
+  ok(!$("levelup"), "the level-up banner is gone");
+
+  // picking the last level from a standing start must just work
+  chips[chips.length - 1].click();
+  // renderChips rebuilds the row, so the pressed state lives on a fresh node
+  const after = [...d.querySelectorAll(".chip")];
+  ok(after[after.length - 1].getAttribute("aria-pressed") === "true",
+    "the hardest level can be chosen immediately");
+  const hero = $("hero").textContent;
+  ok(/\d/.test(hero), `a question was generated for it (${hero})`);
+
+  // and the choice survives a reload
+  const saved = JSON.parse(d.defaultView.localStorage.getItem("rounding-v2"));
+  ok(saved.level === 9, `the pick is saved (level ${saved.level})`);
+  ok(saved.unlocked === undefined, "no unlocked field is written any more");
+}
+
 // ---------- C. instruction text matches the digit the app accepts ----------
 const WHOLE = ["ones","tens","hundreds","thousands","ten thousands","hundred thousands","millions"];
 const DEC = ["tenths","hundredths","thousandths"];
@@ -149,7 +174,6 @@ const placeNameAt = (fromRight, scale) => {
 };
 {
   const {d, $} = boot();
-  $("unlockall").click();
   for(let level = 0; level < 10; level++){
     [...d.querySelectorAll(".chip")][level].click();
     for(let rep = 0; rep < 40; rep++){
@@ -180,7 +204,6 @@ const placeNameAt = (fromRight, scale) => {
 for(const findplace of [true, false]) for(const scaffold of [true, false]){
   const {d, $} = boot();
   const tag = `findplace=${findplace} scaffold=${scaffold}`;
-  $("unlockall").click();
   for(const [id, val] of [["findplace", findplace], ["scaffold", scaffold]]){
     const el = $(id);
     if(el.checked !== val){ el.checked = val; el.onchange.call(el); }
@@ -258,7 +281,6 @@ for(const findplace of [true, false]) for(const scaffold of [true, false]){
 // ---------- E. the step button fills and also moves on by itself ----------
 {
   const {d, $} = boot();
-  $("unlockall").click();
   const digits = [...$("hero").querySelectorAll(".digit")];
   for(const b of digits){ b.click(); if(b.classList.contains("found")) break; }
 

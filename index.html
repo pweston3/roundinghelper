@@ -283,7 +283,6 @@ body{
   font:inherit;font-size:15px;font-weight:500;padding:11px 16px;min-height:44px;border-radius:999px;cursor:pointer;
   background:var(--panel);color:var(--muted-solid);border:2px solid transparent;box-shadow:0 1px 3px var(--shadow);
 }
-.chip.locked{opacity:.7}
 .chip.mix{border-style:dashed;border-color:var(--rule)}
 .chip.mix[aria-pressed="true"]{border-style:solid;border-color:var(--landmark)}
 .lvlgroup{margin-bottom:16px}
@@ -291,15 +290,7 @@ body{
 .lvlhead{display:flex;align-items:center;gap:11px;margin:0 0 10px}
 .lvlhead::before,.lvlhead::after{content:"";flex:1;height:1px;background:var(--rule)}
 .lvlhead span{font-size:13px;font-weight:500;color:var(--muted-solid);white-space:nowrap}
-.unlocklink{
-  display:block;margin:14px auto 0;font:inherit;font-size:14px;font-weight:500;
-  background:none;border:0;color:var(--muted-solid);text-decoration:underline;
-  text-underline-offset:3px;cursor:pointer;padding:10px;min-height:44px;border-radius:10px;
-}
-.unlocklink[hidden]{display:none}
-.chipnote{text-align:center;font-size:14px;color:var(--muted-solid);min-height:22px;margin-top:10px}
 .chip[aria-pressed="true"]{border-color:var(--landmark);color:var(--landmark)}
-.chip .lock{opacity:.5}
 
 .settings{margin:0 0 24px;font-size:15px;color:var(--ink)}
 .settings h3{margin:0 0 4px}
@@ -322,12 +313,6 @@ body{
 .lab-all td{padding:7px 4px;font-size:16px}
 .lab-all td:first-child{color:var(--muted-solid);font-size:15px}
 .lab-all td:last-child{text-align:right;font-weight:700}
-
-.levelup{
-  margin-top:14px;padding:14px;border-radius:16px;background:var(--yes-soft);color:var(--yes);
-  text-align:center;font-weight:700;font-size:17px;
-}
-.levelup[hidden]{display:none}
 
 .sheet-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px}
 .sheet-opts label{display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer}
@@ -486,7 +471,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
         <span class="contlab">Keep going</span>
       </button>
       <button class="next" id="next" hidden>Next number</button>
-      <div class="levelup" id="levelup" hidden></div>
 
       <button class="hintbtn" id="hintbtn">Show me a hint</button>
       <div class="hint" id="hint" hidden></div>
@@ -495,8 +479,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <div class="levels">
       <h2>Round to the nearest</h2>
       <div id="levelgroups"></div>
-      <div class="chipnote" id="chipnote" role="status" aria-live="polite"></div>
-      <button class="unlocklink" id="unlockall">Unlock all levels</button>
     </div>
 
   </section>
@@ -645,7 +627,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     {name:"mixed decimals",   label:"mix of these", pick:[5,6,7]}
   ];
   var LAST = LEVELS.length - 1;
-  var TO_UNLOCK = 5;
   var WHOLE_NAMES = ["ones","tens","hundreds","thousands","ten thousands","hundred thousands","millions"];
   var DEC_NAMES = ["tenths","hundredths","thousandths"];
 
@@ -661,10 +642,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
   var state = {
     level: 0,
-    unlocked: 0,
     stars: 0,
     streak: 0,
-    correctHere: 0,
     scaffold: true,
     findplace: true,
     sound: false,
@@ -677,9 +656,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       var s = JSON.parse(raw);
       if(s && typeof s === "object"){
         state.level = Math.min(Math.max(s.level|0,0),LAST);
-        state.unlocked = Math.min(Math.max(s.unlocked|0,0),LAST);
         state.stars = Math.max(s.stars|0,0);
-        state.correctHere = Math.max(s.correctHere|0,0);
         state.scaffold = s.scaffold !== false;
         state.findplace = s.findplace !== false;
         state.sound = s.sound === true;
@@ -719,7 +696,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   var $ = function(id){ return document.getElementById(id); };
 
   // stages: 0 find place, 1 find neighbors, 2 find decider, 3 which is closer
-  var q = null, stage = 3, firstTry = true;
+  var q = null, stage = 3;
 
   function placeOf(level){
     var pick = LEVELS[level].pick;
@@ -849,21 +826,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       for(var i = g.from; i <= g.to; i++){
         (function(i){
           var lv = LEVELS[i];
-          var locked = i > state.unlocked;
           var b = document.createElement("button");
-          b.className = "chip" + (locked ? " locked" : "") + (lv.label ? " mix" : "");
-          var text = lv.label || lv.name;
-          b.innerHTML = locked ? text + ' <span class="lock">&#128274;</span>' : text;
+          b.className = "chip" + (lv.label ? " mix" : "");
+          b.textContent = lv.label || lv.name;
           b.setAttribute("aria-pressed", i === state.level ? "true" : "false");
           b.onclick = function(){
-            if(i > state.unlocked){
-              var need = TO_UNLOCK - state.correctHere;
-              $("chipnote").textContent = "Get " + need + " more right on \u201c" +
-                LEVELS[state.unlocked].name + "\u201d first.";
-              return;
-            }
-            $("chipnote").textContent = "";
-            state.level = i; state.correctHere = 0; save();
+            state.level = i; save();
             renderChips(); newQuestion();
           };
           row.appendChild(b);
@@ -872,7 +840,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       wrap.appendChild(row);
       box.appendChild(wrap);
     });
-    $("unlockall").hidden = (state.unlocked >= LAST);
   }
 
   function targetIndex(){
@@ -996,7 +963,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     }else{
       btn.classList.add("miss");
       sndMiss();
-      firstTry = false;
       var got = placeNameAt(raw.length-1-idx, q.scale);
       var dir = idx > want ? "left" : "right";
       var steps = Math.abs(idx - want);
@@ -1018,7 +984,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     }else{
       btn.classList.add("miss");
       sndMiss();
-      firstTry = false;
       $("feedback").innerHTML = "Not that one. <span class=\"why\">The decider is right next door to the underlined digit. No other digit counts.</span>";
     }
   }
@@ -1040,13 +1005,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     hideContinue();
     q = makeQuestion(placeOf(state.level));
     stage = state.findplace ? 0 : (state.scaffold ? 1 : 3);
-    firstTry = true;
-    $("chipnote").textContent = "";
     $("prompt").innerHTML = "Round to the nearest <strong>" + q.name + "</strong>";
     renderHero();
     $("feedback").textContent = "";
     $("next").hidden = true;
-    $("levelup").hidden = true;
     $("hint").hidden = true;
     $("hintbtn").textContent = "Show me a hint";
     var mk = $("marker");
@@ -1138,7 +1100,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       btn.classList.add("wrong");
       btn.disabled = true;
       sndMiss();
-      firstTry = false;
       $("feedback").innerHTML = "Not those two. <span class=\"why\">Look at the underlined digit for a clue.</span>";
     }
   }
@@ -1162,17 +1123,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       $("feedback").innerHTML = msg;
       state.stars++;
       sndGood();
-      if(firstTry){
-        state.correctHere++;
-        if(state.correctHere >= TO_UNLOCK && state.level === state.unlocked && state.unlocked < LAST){
-          state.unlocked++;
-          state.correctHere = 0;
-          $("levelup").hidden = false;
-          $("levelup").innerHTML = "New level! You unlocked nearest " +
-            LEVELS[state.unlocked].name + ".";
-          renderChips();
-        }
-      }
       save();
       renderTally(true);
       $("next").hidden = false;
@@ -1181,7 +1131,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       btn.classList.add("wrong");
       btn.disabled = true;
       sndMiss();
-      firstTry = false;
       $("feedback").innerHTML = "Try again. <span class=\"why\">Is the dot to the left of halfway, or to the right?</span>";
     }
   }
@@ -1234,11 +1183,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     $("hintbtn").textContent = "Hide the hint";
   };
 
-  $("unlockall").onclick = function(){
-    state.unlocked = LAST; save();
-    $("chipnote").textContent = "All levels are open.";
-    renderChips();
-  };
   $("findplace").checked = state.findplace;
   $("findplace").onchange = function(){
     state.findplace = this.checked; save(); newQuestion();

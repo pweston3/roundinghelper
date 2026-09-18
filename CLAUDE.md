@@ -34,6 +34,11 @@ makes beyond itself, and it sends nothing anywhere.
 - **All rounding math runs on scaled integers**, never floats. Each place in
   `PLACES` carries a `scale`; a displayed value is `units / scale`. This is why
   decimals don't produce 0.30000000000000004. Keep new work in integer units.
+- **Every level is pickable at any time.** There is no gating, no padlocks,
+  no "5 correct to unlock the next one" and no unlock-all escape hatch. The
+  chips are ordered so the progression is still visible; a kid who is already
+  fluent at tens should not have to grind through them. Old saves may still
+  carry `unlocked` and `correctHere` fields; they are ignored, not migrated.
 - **Progress lives in `localStorage` under `rounding-v2`.** No accounts, no
   server. A separate frozen v1 build uses `rounding-v1` — don't reuse that key.
 
