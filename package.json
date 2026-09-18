@@ -3,7 +3,8 @@
   "private": true,
   "description": "Dev-only manifest. The app itself is index.html and has no dependencies.",
   "scripts": {
-    "test": "node test/dom-test.js"
+    "test": "node test/dom-test.js",
+    "test:sw": "node test/sw-test.js"
   },
   "devDependencies": {
     "jsdom": "^30.1.0"

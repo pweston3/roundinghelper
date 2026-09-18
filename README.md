@@ -18,7 +18,9 @@ Aligned to **4.NBT.A.3** (round multi-digit whole numbers to any place) and
 
 ## Running it
 
-Open `index.html` in a browser. That's the whole app — one self-contained
+Open `index.html` in a browser. Offline support needs it served over
+HTTPS or localhost, since service workers do not run on `file://`.
+Otherwise that's the whole app — one self-contained
 file, no build step, no dependencies, no backend.
 
 ## Testing
@@ -35,9 +37,20 @@ npm install jsdom
 node test/dom-test.js
 ```
 
+`test/sw-test.js` covers the offline cache separately, over a real HTTP
+server in headless Chromium, because service workers do not run on
+`file://`. It checks that the app loads and plays with the network off, and
+that a freshly deployed build beats the cached one rather than being
+shadowed by it.
+
+```bash
+npm install playwright && npx playwright install chromium
+node test/sw-test.js
+```
+
 ## Privacy
 
-No ads, no accounts, no analytics, and zero external requests at runtime.
+No ads, no accounts, no analytics, and no third-party requests at all.
 The typeface is embedded in the file rather than loaded from a font CDN.
 Progress is kept in `localStorage` in one browser and never leaves the
 device. The site is directed at children under 13, so nothing third-party

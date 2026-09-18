@@ -1329,5 +1329,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   updateLab();
 })();
 </script>
+<script>
+// Registers the offline cache. isSecureContext covers https and localhost and
+// excludes file://, where registration throws. Failure is not worth surfacing:
+// the app works perfectly well without it, just not offline.
+if ("serviceWorker" in navigator && window.isSecureContext) {
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+}
+</script>
 </body>
 </html>

@@ -8,7 +8,7 @@ parents and teachers.
 ## Architecture
 
 One self-contained `index.html`. No build step, no framework, no dependencies,
-no backend, no network requests at runtime. Vanilla JS in a single IIFE, CSS in
+no backend, no third-party requests ever. Vanilla JS in a single IIFE, CSS in
 one `<style>` block, the typeface embedded as a base64 WOFF2 data URI.
 
 Deployed on GitHub Pages. Editing means editing `index.html` and pushing.
@@ -18,6 +18,9 @@ Two other files sit alongside it, and a visitor's browser requests neither.
 crawler. `apple-touch-icon.png` is the iOS home-screen icon, fetched only
 when someone adds the site to a home screen. Their sources are in `tools/`,
 each with regeneration instructions in a comment.
+
+`sw.js` is the offline cache. It is the only same-origin request the page
+makes beyond itself, and it sends nothing anywhere.
 
 ## Hard constraints — do not break these
 
@@ -76,6 +79,12 @@ Why it's ordered this way:
   slide across from the previous answer's position.
 - **Worksheet problems** are deduplicated across the whole sheet, not per
   section. The tens pool is small enough that repeats were likely otherwise.
+- **The service worker is network-first for the page, on purpose.** A cached
+  build can therefore never stick, which is the usual way a service worker
+  ruins a static site. Do not "optimise" it to cache-first. `test/sw-test.js`
+  fails if you do: it deploys a new build and asserts the new one wins, both
+  online and on the next offline load. Bump `VERSION` in `sw.js` when the
+  precache list changes, so stale entries get evicted.
 - **`og:image` must be an absolute URL to a real file.** Crawlers don't run
   JavaScript and won't follow a `data:` URI, so the favicon trick doesn't
   work for it. They also cache hard: change the picture and the old one
