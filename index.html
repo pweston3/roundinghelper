@@ -172,12 +172,11 @@ body{
 .hero.pick .digit:hover{background:var(--mark-soft)}
 .hero.pick .digit:active{transform:scale(.94)}
 
-/* The instruction sits right under the digits it is about, with an arrow back
-   up to them. It used to sit below the number line, where the nearest numbers
-   were the two end labels, and a tester tapped those instead. */
-.asktop{margin:4px 0 2px;color:var(--landmark);text-align:center}
+/* The instruction sits right under the digits it is about. It used to sit
+   below the number line, where the nearest numbers on screen were the two end
+   labels, and a tester tapped those instead. */
+.asktop{margin:10px 0 2px;color:var(--landmark);text-align:center}
 .asktop[hidden]{display:none}
-.asktop .pointup{display:block;margin:0 auto -2px}
 .asktop .ask{margin:0 0 4px}
 
 /* While a digit is the question, the number line stops competing for the tap. */
@@ -383,9 +382,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   .feedback{animation:rise .25s ease-out}
   .choice.right{animation:pop .4s ease-out}
   @keyframes bob{0%,100%{transform:translateY(0)}45%{transform:translateY(-7px)}}
-  @keyframes pointbob{0%,100%{transform:translateY(0)}45%{transform:translateY(-4px)}}
   .hero.pick .digit.bob{animation:bob .52s ease-in-out 2}
-  .asktop .pointup{animation:pointbob 1.6s ease-in-out infinite}
 }
 
 @media print{
@@ -445,10 +442,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <div class="hero" id="hero"></div>
 
       <div class="asktop" id="askTop" hidden>
-        <svg class="pointup" width="24" height="13" viewBox="0 0 24 13" aria-hidden="true" focusable="false">
-          <path d="M2.5 10.5 L12 3 L21.5 10.5" fill="none" stroke="currentColor"
-                stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
         <p class="ask" id="askTopText"></p>
       </div>
 

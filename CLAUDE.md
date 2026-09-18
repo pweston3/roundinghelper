@@ -58,11 +58,15 @@ Why it's ordered this way:
 - Only one digit is marked up at a time. Visual emphasis must always match the
   question currently being asked.
 - **The question sits next to the thing it asks about.** A digit question
-  renders above the number line, directly under the digits, with an arrow
-  pointing back up at them. It used to render below the line, where the two
-  nearest numbers on screen were the end labels, and a 4th grader tapped
-  those instead. The line also dims while a digit is the question, so it
-  stops competing for the tap.
+  renders above the number line, directly under the digits. It used to render
+  below the line, where the two nearest numbers on screen were the end labels,
+  and a 4th grader tapped those instead. The line also dims while a digit is
+  the question, so it stops competing for the tap.
+- **No arrow pointing up at the digits.** There was one. Centred under the
+  row, it lands under whichever digit happens to sit in the middle, so on
+  4,245 it pointed straight at the hundreds digit and gave the answer away.
+  Anything that singles out one digit before the kid has chosen is the bug,
+  not the hint.
 - **Steps do not vanish on a timer.** A "Keep going" button fills over
   `STEP_WAIT` and then advances, or the kid taps it and goes at once. The
   old bare 1.9s setTimeout gave no clue why the screen was about to change
