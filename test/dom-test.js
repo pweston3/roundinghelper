@@ -109,23 +109,32 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
       `run ${run}: every page carries the document stylesheet class`);
     const sheet = pages[0];
     const probs = [];
-    let place = null;
-    for(const el of sheet.children){
-      if(el.tagName === "H3"){
-        place = el.textContent.match(/Round to the nearest (.+)\.$/)[1];
-        ok(PLACE_STR[place] !== undefined, "known heading: " + place);
-      } else if(el.tagName === "OL"){
-        // each row is an ordinal, a value and an answer rule, in fixed slots
-        for(const li of el.children){
-          ok(li.children.length === 3, `run ${run}: a row has ordinal, value and rule`);
-          probs.push({
-            num: li.querySelector(".pn").textContent.trim(),
-            shown: li.querySelector(".pv").textContent.trim(),
-            place
-          });
-        }
+    for(const sec of sheet.querySelectorAll(".sec")){
+      const place = sec.querySelector("h3").textContent.match(/Round to the nearest (.+)\.$/)[1];
+      ok(PLACE_STR[place] !== undefined, "known heading: " + place);
+
+      // two real lists side by side, because WebKit drops CSS multicolumn when
+      // it paginates and printed one long column instead
+      const lists = sec.querySelectorAll("ol.probs");
+      ok(lists.length === 2, `run ${run}: ${place} is laid out as two real lists (got ${lists.length})`);
+      const counts = [...lists].map(l => l.children.length);
+      ok(Math.abs(counts[0] - counts[1]) <= 1,
+        `run ${run}: ${place} splits evenly between the columns (${JSON.stringify(counts)})`);
+
+      // document order is left column then right, which is the order the
+      // ordinals run in
+      for(const li of sec.querySelectorAll("ol.probs li")){
+        ok(li.children.length === 3, `run ${run}: a row has ordinal, value and rule`);
+        probs.push({
+          num: li.querySelector(".pn").textContent.trim(),
+          shown: li.querySelector(".pv").textContent.trim(),
+          place
+        });
       }
     }
+    ok(sheet.querySelectorAll(".sec").length > 0, `run ${run}: the sheet has sections`);
+    ok(pages[1].querySelectorAll(".key .keycol").length === 4,
+      `run ${run}: the key is four real columns`);
     const keyRows = [...pages[1].querySelectorAll(".key .ki")].map(k => ({
       num: k.querySelector(".pn").textContent.trim(),
       val: k.querySelector(".pv").textContent.trim()

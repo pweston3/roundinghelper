@@ -1501,14 +1501,21 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     '.sheetdoc .blank{display:inline-block;min-width:72px;border-bottom:1px solid #000;margin-left:6px}' +
     '.sheetdoc h3{font-size:15px;font-weight:700;margin:17px 0 8px;break-after:avoid}' +
     '.sheetdoc h3:first-of-type{margin-top:0}' +
-    '.sheetdoc .probs{list-style:none;margin:0;padding:0;columns:2;column-gap:30px;' +
+    // Columns are laid out as real side-by-side lists, never with CSS
+    // multicolumn. WebKit honours `columns` on screen and drops it in its
+    // paginated print context, so an iPhone showed two tidy columns and then
+    // printed one long one over two sheets.
+    '.sheetdoc .sec{break-inside:avoid;page-break-inside:avoid}' +
+    '.sheetdoc .cols{display:flex;gap:30px;align-items:flex-start}' +
+    '.sheetdoc .probs{flex:1 1 0;min-width:0;list-style:none;margin:0;padding:0;' +
       'font-variant-numeric:tabular-nums}' +
     '.sheetdoc .probs li{display:flex;align-items:baseline;margin:0 0 13px;break-inside:avoid}' +
     '.sheetdoc .pn{flex:none;width:30px;text-align:right;padding-right:9px;font-size:12.5px;color:#7C7C7C}' +
     '.sheetdoc .pv{flex:none;width:96px;text-align:right}' +
     '.sheetdoc .rule{flex:1;margin-left:16px;border-bottom:1px solid #000;height:1.5em}' +
     '.sheetdoc .key{font-size:14px;color:#222;font-variant-numeric:tabular-nums}' +
-    '.sheetdoc .keys{columns:4;column-gap:20px;margin-top:10px}' +
+    '.sheetdoc .keys{display:flex;gap:20px;align-items:flex-start;margin-top:10px}' +
+    '.sheetdoc .keycol{flex:1 1 0;min-width:0}' +
     '.sheetdoc .ki{display:flex;align-items:baseline;margin:0 0 6px;break-inside:avoid}' +
     '.sheetdoc .ki .pv{width:auto;text-align:left}';
 
@@ -1544,17 +1551,24 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
     chosen.forEach(function(pi){
       var pl = PLACES[pi];
-      var rows = "", made = 0;
+      var rows = [];
       for(var i = 0; i < per; i++){
         var item = freshQuestion(pl);
         if(!item) break;
-        num++; made++;
-        rows += '<li><span class="pn">' + num + '.</span><span class="pv">' +
-                show(item.n, item.scale) + '</span><span class="rule"></span></li>';
+        num++;
+        rows.push('<li><span class="pn">' + num + '.</span><span class="pv">' +
+                  show(item.n, item.scale) + '</span><span class="rule"></span></li>');
         keys.push({n: num, a: show(item.answer, item.scale, item.p)});
       }
-      if(!made) return;
-      body += "<h3>Round to the nearest " + pl.name + ".</h3><ol class='probs'>" + rows + "</ol>";
+      if(!rows.length) return;
+      // first half down the left, second half down the right, which is the
+      // order CSS multicolumn used to produce
+      var split = Math.ceil(rows.length / 2);
+      body += '<section class="sec"><h3>Round to the nearest ' + pl.name + '.</h3>' +
+              '<div class="cols">' +
+                "<ol class='probs'>" + rows.slice(0, split).join("") + "</ol>" +
+                "<ol class='probs'>" + rows.slice(split).join("") + "</ol>" +
+              '</div></section>';
     });
 
     var head = '<div class="sheet-brand">roundinghelper.com</div>' +
@@ -1564,11 +1578,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
     var pages = [head + body];
     if($("sheetKey").checked && keys.length){
-      pages.push('<div class="key"><b>Answer key</b><div class="keys">' +
-        keys.map(function(k){
-          return '<div class="ki"><span class="pn">' + k.n + '.</span>' +
-                 '<span class="pv">' + k.a + '</span></div>';
-        }).join("") + '</div></div>');
+      var entries = keys.map(function(k){
+        return '<div class="ki"><span class="pn">' + k.n + '.</span>' +
+               '<span class="pv">' + k.a + '</span></div>';
+      });
+      var perCol = Math.ceil(entries.length / 4), cols = "";
+      for(var c = 0; c < 4; c++){
+        cols += '<div class="keycol">' + entries.slice(c * perCol, (c + 1) * perCol).join("") + '</div>';
+      }
+      pages.push('<div class="key"><b>Answer key</b><div class="keys">' + cols + '</div></div>');
     }
     return pages;
   }

@@ -198,6 +198,45 @@ const measure = (p, W) => p.evaluate(({W}) => {
     await ctx.close();
   }
 
+  // ---------- 4c. columns survive pagination ----------
+  // WebKit honours CSS multicolumn on screen and drops it once it paginates,
+  // so an iPhone showed two tidy columns and printed one long one across two
+  // sheets. Chromium handles multicol in print, so no rendering check here can
+  // catch a regression to it; the guard is that the stylesheet never asks for
+  // it and the markup carries real columns.
+  console.log("\n[4c] print columns");
+  {
+    const ctx = await browser.newContext({viewport:{width:390, height:900}});
+    const p = await openSheet(ctx);
+    await p.setChecked("#sheetKey", true);
+    await p.click("#sheetMake");
+    await p.waitForTimeout(250);
+
+    const css = await p.evaluate(() =>
+      [...document.querySelectorAll("style")].map(s => s.textContent).join(""));
+    const sheetCss = css.slice(css.indexOf(".sheetdoc"));
+    ok(!/\bcolumn-count\b/.test(sheetCss) && !/[^-]\bcolumns\s*:/.test(sheetCss),
+      "the sheet stylesheet asks for no CSS multicolumn");
+
+    const secs = await p.$$eval("#pageStack .sec", els => els.map(sec => ({
+      lists: sec.querySelectorAll("ol.probs").length,
+      tops: [...sec.querySelectorAll("ol.probs")].map(l => Math.round(l.getBoundingClientRect().top)),
+      lefts: [...sec.querySelectorAll("ol.probs")].map(l => Math.round(l.getBoundingClientRect().left))
+    })));
+    ok(secs.length > 0, `sections found (${secs.length})`);
+    ok(secs.every(s => s.lists === 2), "every section holds two real lists");
+    ok(secs.every(s => s.tops[0] === s.tops[1]), "the two lists sit side by side, not stacked");
+    ok(secs.every(s => s.lefts[1] > s.lefts[0]), "and the second is to the right of the first");
+
+    const keycols = await p.$$eval("#pageStack .keycol", e => e.length);
+    ok(keycols === 4, `the answer key is four real columns (got ${keycols})`);
+
+    // the ordinals still read 1..n straight down the left then down the right
+    const nums = await p.$$eval("#pageStack .sec .pn", e => e.map(x => Number(x.textContent.replace(".",""))));
+    ok(nums.every((n, i) => n === i + 1), "the numbering still runs in order across the split");
+    await ctx.close();
+  }
+
   // ---------- 5. select all / clear all ----------
   console.log("\n[5] select all");
   {

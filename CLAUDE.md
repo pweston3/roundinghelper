@@ -132,6 +132,13 @@ cannot see an animation.
 
 ## Gotchas already fixed — don't regress them
 
+- **Never use CSS multicolumn on the worksheet.** WebKit honours `columns` on
+  screen and drops it once it paginates, so an iPhone showed two tidy columns
+  in the preview and then printed one long column across two sheets. The
+  problems and the answer key are built as real side-by-side lists instead.
+  Chromium handles multicol in print, so no rendering check catches a
+  regression to it: `test/print-test.js` asserts the stylesheet never asks for
+  it, and that the markup carries real columns sitting side by side.
 - **The worksheet preview is the page, not a reflow of it.** It renders at
   816px, a real US Letter at the 14mm `@page` margin, and is then scaled with
   a transform to fit whatever space it has. Laying it out at the container's
