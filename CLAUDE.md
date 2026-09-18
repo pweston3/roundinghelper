@@ -147,6 +147,10 @@ every character in the file.
 
 ## Accessibility and audience notes
 
+The two guided-step toggles live on the grown-ups page itself, not behind a
+further door. They had a screen of their own holding two checkboxes and
+nothing else, advertised as also unlocking every level, which it did not.
+
 Touch targets are 44px minimum, and digits are 46×62 — NN/g recommends 2cm
 targets for young children versus 1cm for adults, and 9–12 year olds sit
 between. Motion is wrapped in `prefers-reduced-motion`. Sound is off by
