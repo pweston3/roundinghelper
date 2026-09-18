@@ -55,6 +55,14 @@ same way, including that they all stand down under `prefers-reduced-motion`.
 node test/motion-test.js
 ```
 
+`test/print-test.js` covers the worksheet: that the on-screen preview is the
+printed page rather than a reflow of it, and that a default sheet fits one
+piece of paper.
+
+```bash
+node test/print-test.js
+```
+
 `npm run eval` is the question-quality check. It samples thousands of real
 questions per level and asserts on the shape of the whole set, which is what
 catches a generator that lets a kid guess well without reasoning.

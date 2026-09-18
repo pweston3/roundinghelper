@@ -322,25 +322,35 @@ body{
 .sheet-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--rule);padding-top:14px}
 .sheet-bar select{font:inherit;font-size:15px;padding:9px;border-radius:12px;border:2px solid var(--rule);background:var(--panel);color:var(--ink)}
 .sheet-bar button{font:inherit;font-size:16px;font-weight:700;padding:11px 18px;border-radius:14px;border:0;background:var(--ink);color:var(--panel);cursor:pointer}
-.sheet{margin-top:20px;border-top:1px solid var(--rule);padding-top:18px}
-.sheet-head{display:flex;flex-wrap:wrap;gap:4px 18px;justify-content:space-between;font-size:15px;color:var(--muted-solid);margin-bottom:16px}
-.sheet-head span{white-space:nowrap}
-.sheet h3{font-size:16px;font-weight:700;margin:20px 0 10px}
-.sheet h3{break-after:avoid}
-.probs{list-style:none;margin:0;padding:0;columns:2;column-gap:30px;font-variant-numeric:tabular-nums}
-.probs li{display:flex;align-items:baseline;margin:0 0 17px;break-inside:avoid;font-size:16px}
-/* The ordinal gets its own light gutter. Same weight as the problem it labels,
-   it competed with the digits the kid is meant to be reading. */
-.pn{flex:none;width:30px;text-align:right;padding-right:9px;font-size:12.5px;color:var(--muted-solid)}
-/* Fixed slot, right aligned, so place values line up down the column. */
-.pv{flex:none;width:96px;text-align:right}
-/* flex:1 makes every answer rule end at the same place, whatever the number. */
-.rule{flex:1;margin-left:16px;border-bottom:1px solid var(--rule);height:1.35em}
-.blank{display:inline-block;min-width:72px;border-bottom:1px solid var(--rule);margin-left:6px}
-.key{margin-top:24px;border-top:1px dashed var(--rule);padding-top:12px;font-size:14px;color:var(--muted-solid);font-variant-numeric:tabular-nums}
-.keys{columns:4;column-gap:20px;margin-top:8px}
-.ki{display:flex;align-items:baseline;margin:0 0 5px;break-inside:avoid}
-.ki .pv{width:auto;text-align:left}
+/* The preview is a real page at print size, scaled down to fit. The document
+   itself is styled once, by SHEET_CSS, and that same string is what the print
+   window uses, so the two cannot drift apart again. */
+.pagewrap{margin-top:20px;border-top:1px solid var(--rule);padding-top:18px;overflow:hidden}
+.pagewrap[hidden]{display:none}
+.pagestack{transform-origin:top left}
+.page{
+  position:relative;
+  width:816px;min-height:1056px;box-sizing:border-box;padding:53px;
+  background:#fff;box-shadow:0 2px 16px rgba(0,0,0,.28);margin-bottom:24px;
+}
+.previewnote{font-size:13px;color:var(--muted-solid);margin:0 0 10px}
+/* Where the printer will actually cut, drawn on the preview when a sheet runs
+   past one page. */
+.pbreak{position:absolute;left:0;right:0;border-top:2px dashed #9AA7B1;pointer-events:none}
+.pbreak::after{
+  content:attr(data-label);position:absolute;right:4px;top:6px;
+  font-size:14px;color:#7C8A95;font-family:system-ui,sans-serif;
+}
+.sheet-opts h4{
+  grid-column:1/-1;display:flex;align-items:center;gap:11px;margin:6px 0 0;
+  font-size:13px;font-weight:500;color:var(--muted-solid);
+}
+.sheet-opts h4::before,.sheet-opts h4::after{content:"";flex:1;height:1px;background:var(--rule)}
+.pickall{
+  grid-column:1/-1;justify-self:start;font:inherit;font-size:14px;font-weight:500;
+  background:none;border:0;color:var(--landmark);text-decoration:underline;
+  text-underline-offset:3px;cursor:pointer;padding:8px 2px;min-height:44px;
+}
 
 .grownups{margin-top:30px;text-align:center;font-size:14px;color:var(--muted-solid);line-height:2.2}
 .grownups button{
@@ -569,14 +579,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
             <option value="14">14 each</option>
           </select>
           <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer">
-            <input type="checkbox" id="sheetKey" checked style="width:18px;height:18px;accent-color:var(--landmark)"> Answer key
+            <input type="checkbox" id="sheetKey" style="width:18px;height:18px;accent-color:var(--landmark)"> Answer key
           </label>
           <button id="sheetMake">Make worksheet</button>
           <button id="sheetPrint" style="background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px var(--rule)">Print</button>
         </div>
         <p class="printhelp" id="printhelp" hidden></p>
       </div>
-      <div class="sheet" id="sheet" hidden></div>
+      <div class="pagewrap" id="pageWrap" hidden>
+        <p class="previewnote">This is exactly what prints.</p>
+        <div class="pagestack" id="pageStack"></div>
+      </div>
     </div>
   </section>
 
@@ -1429,31 +1442,90 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   $("labPlace").onchange = updateLab;
 
   // Worksheet
+  function sheetBoxes(){ return [].slice.call($("sheetPlaces").querySelectorAll("input")); }
+
+  function paintPickAll(){
+    var all = sheetBoxes().every(function(b){ return b.checked; });
+    $("pickall").textContent = all ? "Clear all" : "Select all";
+  }
+
+  // Whole numbers are ticked to start. They are what grade 4 is for, and the
+  // old default of one lone place made a sheet nobody would hand out as is.
   function renderSheetOptions(){
     var box = $("sheetPlaces");
     box.innerHTML = "";
+    var group = null;
     PLACES.forEach(function(pl, i){
+      var isWhole = pl.scale === 1;
+      var head = isWhole ? "Whole numbers" : "Decimals";
+      if(head !== group){
+        group = head;
+        var h = document.createElement("h4");
+        h.textContent = head;
+        box.appendChild(h);
+      }
       var lab = document.createElement("label");
       lab.innerHTML = '<input type="checkbox" data-place="' + i + '"' +
-        (i === 1 ? " checked" : "") + '> nearest ' + pl.name;
+        (isWhole ? " checked" : "") + '> nearest ' + pl.name;
       box.appendChild(lab);
     });
+    var btn = document.createElement("button");
+    btn.className = "pickall";
+    btn.id = "pickall";
+    box.appendChild(btn);
+    btn.onclick = function(){
+      var all = sheetBoxes().every(function(b){ return b.checked; });
+      sheetBoxes().forEach(function(b){ b.checked = !all; });
+      paintPickAll();
+    };
+    box.addEventListener("change", paintPickAll);
+    paintPickAll();
   }
 
-  function buildSheet(){
-    var chosen = [].slice.call($("sheetPlaces").querySelectorAll("input:checked"))
+  // One stylesheet for the document, used by the on-screen page and by the
+  // print window alike. Everything is scoped to .sheetdoc and uses paper
+  // colours, never a theme variable, because it is a picture of a printed
+  // page and not part of the app's surface.
+  var SHEET_CSS =
+    '.sheetdoc{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;' +
+      'color:#111;font-size:15px;line-height:1.45}' +
+    '.sheetdoc .sheet-brand{font-size:11px;color:#555;margin-bottom:10px;letter-spacing:.02em}' +
+    '.sheetdoc .sheet-head{display:flex;flex-wrap:wrap;gap:4px 18px;justify-content:space-between;' +
+      'font-size:14px;color:#333;margin-bottom:16px}' +
+    '.sheetdoc .sheet-head span{white-space:nowrap}' +
+    '.sheetdoc .blank{display:inline-block;min-width:72px;border-bottom:1px solid #000;margin-left:6px}' +
+    '.sheetdoc h3{font-size:15px;font-weight:700;margin:17px 0 8px;break-after:avoid}' +
+    '.sheetdoc h3:first-of-type{margin-top:0}' +
+    '.sheetdoc .probs{list-style:none;margin:0;padding:0;columns:2;column-gap:30px;' +
+      'font-variant-numeric:tabular-nums}' +
+    '.sheetdoc .probs li{display:flex;align-items:baseline;margin:0 0 13px;break-inside:avoid}' +
+    '.sheetdoc .pn{flex:none;width:30px;text-align:right;padding-right:9px;font-size:12.5px;color:#7C7C7C}' +
+    '.sheetdoc .pv{flex:none;width:96px;text-align:right}' +
+    '.sheetdoc .rule{flex:1;margin-left:16px;border-bottom:1px solid #000;height:1.5em}' +
+    '.sheetdoc .key{font-size:14px;color:#222;font-variant-numeric:tabular-nums}' +
+    '.sheetdoc .keys{columns:4;column-gap:20px;margin-top:10px}' +
+    '.sheetdoc .ki{display:flex;align-items:baseline;margin:0 0 6px;break-inside:avoid}' +
+    '.sheetdoc .ki .pv{width:auto;text-align:left}';
+
+  // The preview needs the very same rules the print window gets, so inject the
+  // one string into this document too. Without this the preview falls back to
+  // the app's own styling and stops being a preview at all.
+  (function(){
+    var st = document.createElement("style");
+    st.textContent = SHEET_CSS;
+    document.head.appendChild(st);
+  })();
+
+  // Returns the contents of each printed page, in order. The preview renders
+  // one .page per entry and print puts a break between them, so what is on
+  // screen and what comes out of the printer are the same pages.
+  function sheetPages(){
+    var chosen = sheetBoxes().filter(function(el){ return el.checked; })
       .map(function(el){ return Number(el.getAttribute("data-place")); });
-    $("sheet").hidden = false;
-    if(!chosen.length){
-      $("sheet").innerHTML = "<p>Pick at least one place to round to.</p>";
-      return;
-    }
+    if(!chosen.length) return null;
+
     var per = Number($("sheetCount").value);
-    var html = '<div class="sheet-brand">roundinghelper.com</div>' +
-               '<div class="sheet-head"><span>Name <span class="blank" style="min-width:150px"></span></span>' +
-               '<span>Date <span class="blank" style="min-width:86px"></span></span>' +
-               '<span>Score <span class="blank" style="min-width:52px"></span> / TOTALCOUNT</span></div>';
-    var keys = [], num = 0, seen = {};
+    var keys = [], num = 0, seen = {}, body = "";
 
     // no number repeats anywhere on the sheet
     function freshQuestion(pl){
@@ -1467,57 +1539,101 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
     chosen.forEach(function(pi){
       var pl = PLACES[pi];
-      var body = "", made = 0;
-      for(var i=0;i<per;i++){
+      var rows = "", made = 0;
+      for(var i = 0; i < per; i++){
         var item = freshQuestion(pl);
         if(!item) break;
         num++; made++;
-        body += '<li><span class="pn">' + num + '.</span><span class="pv">' +
+        rows += '<li><span class="pn">' + num + '.</span><span class="pv">' +
                 show(item.n, item.scale) + '</span><span class="rule"></span></li>';
         keys.push({n: num, a: show(item.answer, item.scale, item.p)});
       }
       if(!made) return;
-      html += "<h3>Round to the nearest " + pl.name + ".</h3><ol class='probs'>" + body + "</ol>";
+      body += "<h3>Round to the nearest " + pl.name + ".</h3><ol class='probs'>" + rows + "</ol>";
     });
 
-    if($("sheetKey").checked){
-      var rows = keys.map(function(k){
-        return '<div class="ki"><span class="pn">' + k.n + '.</span>' +
-               '<span class="pv">' + k.a + '</span></div>';
-      }).join("");
-      html += '<div class="key"><b>Answer key</b><div class="keys">' + rows + '</div></div>';
+    var head = '<div class="sheet-brand">roundinghelper.com</div>' +
+               '<div class="sheet-head"><span>Name <span class="blank" style="min-width:150px"></span></span>' +
+               '<span>Date <span class="blank" style="min-width:86px"></span></span>' +
+               '<span>Score <span class="blank" style="min-width:52px"></span> / ' + num + '</span></div>';
+
+    var pages = [head + body];
+    if($("sheetKey").checked && keys.length){
+      pages.push('<div class="key"><b>Answer key</b><div class="keys">' +
+        keys.map(function(k){
+          return '<div class="ki"><span class="pn">' + k.n + '.</span>' +
+                 '<span class="pv">' + k.a + '</span></div>';
+        }).join("") + '</div></div>');
     }
-    $("sheet").innerHTML = html.replace("TOTALCOUNT", num);
+    return pages;
   }
+
+  // The page is laid out at its real width and then scaled, so the preview is
+  // the printout rather than a narrow reflow of it. Reflowing was the old
+  // behaviour and it made the answer rules collapse to stubs on a phone.
+  function fitPreview(){
+    var wrap = $("pageWrap"), stack = $("pageStack");
+    if(wrap.hidden) return;
+    var avail = wrap.clientWidth;
+    if(!avail) return;
+    var scale = Math.min(1, avail / 816);
+    stack.style.transform = "scale(" + scale + ")";
+    // a scaled box still occupies its unscaled size in layout, so the wrapper
+    // has to be told the height the viewer actually sees
+    wrap.style.height = Math.ceil(stack.offsetHeight * scale) + "px";
+  }
+
+  // US Letter at the 14mm @page margin, in CSS pixels: 8.5x11in at 96dpi.
+  var SHEET_PAGE = 1056;
+
+  function markBreaks(){
+    [].slice.call($("pageStack").querySelectorAll(".page")).forEach(function(pg){
+      [].slice.call(pg.querySelectorAll(".pbreak")).forEach(function(m){
+        pg.removeChild(m);
+      });
+      for(var y = SHEET_PAGE; y < pg.scrollHeight - 8; y += SHEET_PAGE){
+        var m = document.createElement("div");
+        m.className = "pbreak";
+        m.style.top = y + "px";
+        m.setAttribute("data-label", "page " + (Math.round(y / SHEET_PAGE) + 1));
+        pg.appendChild(m);
+      }
+    });
+  }
+
+  function buildSheet(){
+    var pages = sheetPages();
+    $("pageWrap").hidden = false;
+    $("pageStack").innerHTML = pages
+      ? pages.map(function(h){ return '<div class="page sheetdoc">' + h + '</div>'; }).join("")
+      : '<div class="page sheetdoc"><p>Pick at least one place to round to.</p></div>';
+    markBreaks();
+    fitPreview();
+  }
+
+  window.addEventListener("resize", fitPreview);
 
   $("sheetMake").onclick = buildSheet;
 
-  var PRINT_CSS =
-    'body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#111;margin:26px;font-size:16px;line-height:1.5}' +
-    '.sheet-brand{font-size:12px;color:#555;margin-bottom:14px;letter-spacing:.02em}' +
-    '.sheet-head{display:flex;justify-content:space-between;font-size:15px;color:#333;margin-bottom:20px}' +
-    '.blank{display:inline-block;min-width:72px;border-bottom:1px solid #000;margin-left:6px}' +
-    'h3{font-size:16px;font-weight:700;margin:24px 0 11px;break-after:avoid}' +
-    '.probs{list-style:none;margin:0;padding:0;columns:2;column-gap:30px;font-variant-numeric:tabular-nums}' +
-    '.probs li{display:flex;align-items:baseline;margin:0 0 19px;break-inside:avoid}' +
-    '.pn{flex:none;width:30px;text-align:right;padding-right:9px;font-size:12.5px;color:#7C7C7C}' +
-    '.pv{flex:none;width:96px;text-align:right}' +
-    '.rule{flex:1;margin-left:16px;border-bottom:1px solid #000;height:1.5em}' +
-    '.key{margin-top:24px;border-top:1px dashed #999;padding-top:12px;font-size:14px;color:#222;' +
-      'font-variant-numeric:tabular-nums;page-break-before:always}' +
-    '.keys{columns:4;column-gap:20px;margin-top:10px}' +
-    '.ki{display:flex;align-items:baseline;margin:0 0 6px;break-inside:avoid}' +
-    '.ki .pv{width:auto;text-align:left}' +
-    '@page{margin:14mm}';
-
   function printableDoc(){
+    var pages = [].slice.call($("pageStack").children).map(function(el){ return el.innerHTML; });
+    var body = pages.map(function(h, i){
+      return '<div class="sheetdoc"' + (i ? ' style="page-break-before:always"' : '') + '>' + h + '</div>';
+    }).join("");
     return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
-           '<title>Rounding Helper worksheet</title><style>' + PRINT_CSS + '</style></head><body>' +
-           $("sheet").innerHTML + '</body></html>';
+           '<title>Rounding Helper worksheet</title><style>' +
+           'body{margin:0}@page{margin:14mm}' +
+           // On screen the print window has no page box to lay out against, so
+           // it reflows to whatever the window is. On a phone that is a squashed
+           // version of the thing you are about to print. Pin it to page width
+           // for screen only; printing still uses the @page box.
+           '@media screen{body{width:816px;margin:0 auto;padding:53px;' +
+             'box-sizing:border-box;background:#fff}}' + SHEET_CSS +
+           '</style></head><body>' + body + '</body></html>';
   }
 
   $("sheetPrint").onclick = function(){
-    if($("sheet").hidden) buildSheet();
+    if($("pageWrap").hidden) buildSheet();
     $("printhelp").hidden = true;
 
     // Printing from inside an embedded frame is blocked (or prints the wrong page),

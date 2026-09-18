@@ -77,7 +77,23 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
   $("mHub").click(); $("mSheet").click();
   const boxes = [...$("sheetPlaces").querySelectorAll("input")];
   ok(boxes.length === 8, "8 worksheet place options, got " + boxes.length);
-  boxes.forEach(b => b.checked = true);
+
+  // defaults a teacher meets before touching anything
+  ok(boxes.filter(b => b.checked).length === 5, "the five whole-number places start ticked");
+  ok(boxes.slice(0, 5).every(b => b.checked), "and it is the whole numbers, not the decimals");
+  ok(boxes.slice(5).every(b => !b.checked), "decimals start unticked");
+  ok($("sheetKey").checked === false, "the answer key is off by default");
+
+  // select all / clear all
+  ok(!!$("pickall"), "there is a select-all control");
+  ok($("pickall").textContent === "Select all", "it offers Select all while some are unticked");
+  $("pickall").click();
+  ok(boxes.every(b => b.checked), "Select all ticks every place");
+  ok($("pickall").textContent === "Clear all", "and then offers Clear all");
+  $("pickall").click();
+  ok(boxes.every(b => !b.checked), "Clear all unticks every place");
+  $("pickall").click();
+
   $("sheetCount").value = "14";
   $("sheetKey").checked = true;
 
@@ -86,7 +102,12 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
 
   for(let run = 0; run < 10; run++){
     $("sheetMake").click();
-    const sheet = $("sheet");
+    // the preview is one .page per printed page, and the key gets its own
+    const pages = [...$("pageStack").children];
+    ok(pages.length === 2, `run ${run}: problems and key are separate pages (got ${pages.length})`);
+    ok(pages.every(el => el.classList.contains("sheetdoc")),
+      `run ${run}: every page carries the document stylesheet class`);
+    const sheet = pages[0];
     const probs = [];
     let place = null;
     for(const el of sheet.children){
@@ -105,7 +126,7 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
         }
       }
     }
-    const keyRows = [...sheet.querySelectorAll(".key .ki")].map(k => ({
+    const keyRows = [...pages[1].querySelectorAll(".key .ki")].map(k => ({
       num: k.querySelector(".pn").textContent.trim(),
       val: k.querySelector(".pv").textContent.trim()
     }));

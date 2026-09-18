@@ -132,6 +132,20 @@ cannot see an animation.
 
 ## Gotchas already fixed — don't regress them
 
+- **The worksheet preview is the page, not a reflow of it.** It renders at
+  816px, a real US Letter at the 14mm `@page` margin, and is then scaled with
+  a transform to fit whatever space it has. Laying it out at the container's
+  width instead is what made the answer rules collapse to stubs on a phone.
+  `SHEET_CSS` is one string used by both the preview and the print window, so
+  they cannot drift apart; the preview also needs it injected into this
+  document or it silently falls back to the app's own styling and stops being
+  a preview.
+- **The default sheet has to fit one piece of paper.** Five whole-number
+  places at six each is 30 problems, and it sat 146px over a page until the
+  row and heading spacing was tightened. `test/print-test.js` measures the
+  real height against the printable area and fails if it spills, because a
+  teacher printing a class set should not get a second sheet holding four
+  problems.
 - **Printing** must open a standalone document in a new window. `window.print()`
   from inside an embedded frame is blocked or prints the wrong page.
 - **Number-line labels** are measured after render and pinned so wide values
