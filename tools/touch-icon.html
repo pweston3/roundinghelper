@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<!--
+  Source for apple-touch-icon.png (180x180), the iOS home-screen icon.
+
+    node -e "const{chromium}=require('playwright');(async()=>{ \
+      const b=await chromium.launch(),p=await b.newPage({viewport:{width:180,height:180}}); \
+      await p.goto('file://'+process.cwd()+'/tools/touch-icon.html'); \
+      await p.screenshot({path:'apple-touch-icon.png'}); await b.close();})()"
+
+  Deliberately square and full-bleed with no rounded corners of its own: iOS
+  applies its own squircle mask, and pre-rounding it leaves dark corners
+  around the result. It is also fully opaque, because iOS composites any
+  transparency onto black.
+-->
+<html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0;width:180px;height:180px;overflow:hidden}
+  svg{display:block}
+</style></head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+  <rect width="180" height="180" fill="#15697A"/>
+  <g stroke="#FFFFFF" stroke-width="16.9" stroke-linecap="round">
+    <line x1="36.6" y1="90" x2="143.4" y2="90"/>
+    <line x1="36.6" y1="64.7" x2="36.6" y2="115.3"/>
+    <line x1="143.4" y1="64.7" x2="143.4" y2="115.3"/>
+  </g>
+  <circle cx="75.9" cy="90" r="27" fill="#FF6E9C" stroke="#15697A" stroke-width="11.3"/>
+</svg>
+</body></html>

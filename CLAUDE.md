@@ -13,9 +13,11 @@ one `<style>` block, the typeface embedded as a base64 WOFF2 data URI.
 
 Deployed on GitHub Pages. Editing means editing `index.html` and pushing.
 
-The one other file the site serves is `og.png`, the link-preview image. A
-browser never requests it, only a sharing platform's crawler does, so it
-costs the visitor nothing. `tools/og-image.html` regenerates it.
+Two other files sit alongside it, and a visitor's browser requests neither.
+`og.png` is the link-preview image, fetched only by a sharing platform's
+crawler. `apple-touch-icon.png` is the iOS home-screen icon, fetched only
+when someone adds the site to a home screen. Their sources are in `tools/`,
+each with regeneration instructions in a comment.
 
 ## Hard constraints — do not break these
 
@@ -78,6 +80,9 @@ Why it's ordered this way:
   JavaScript and won't follow a `data:` URI, so the favicon trick doesn't
   work for it. They also cache hard: change the picture and the old one
   keeps appearing until the `?v=` on the tag is bumped.
+- **`apple-touch-icon.png` is square and opaque on purpose.** iOS applies
+  its own squircle mask, so rounding the corners first leaves dark notches
+  around the result, and iOS composites any transparency onto black.
 - **The favicon** is an inline SVG data URI. Every `#` in it must be written
   as `%23`. Left raw, the browser reads it as a fragment, truncates the URI
   and the icon vanishes with no error anywhere.
@@ -115,6 +120,12 @@ than in the child's navigation.
 
 ## Open items
 
-- Decide whether the kid-facing title stays "Rounding Helper"
-- No apple-touch-icon yet, so adding the site to an iPad home screen gives a
-  screenshot rather than an icon. That one needs a PNG.
+Nothing open right now.
+
+## Settled
+
+- **The kid-facing name stays "Rounding Helper."** It matches the domain, so
+  a kid typing what a parent told them lands in the right place. It also
+  reaches a kid in only two spots, the tab title and the nav button, because
+  the practice screen carries no branding by design. A cuter name would date
+  faster and read as babyish to the 5th graders at the top of the range.
