@@ -104,8 +104,6 @@ body{
 .brand .nm{font-size:16px;font-weight:700;letter-spacing:.01em;color:var(--landmark);white-space:nowrap}
 .navright{display:flex;align-items:center;gap:5px}
 .navright .tally{font-size:14px}
-.iconbtn.sq{padding:0;width:38px;min-height:38px;display:inline-flex;align-items:center;justify-content:center}
-.iconbtn.sq svg{display:block}
 @media (max-width:369px){ .brand .nm{font-size:14px} }
 @media (max-width:339px){ .brand .nm{display:none} }
 .modes{display:flex;gap:4px;background:var(--panel);border-radius:999px;padding:4px;box-shadow:0 1px 3px var(--shadow)}
@@ -435,7 +433,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <button class="brand" id="mHome" aria-label="Rounding Helper - back to practice"><svg width="30" height="15" viewBox="0 0 30 14" aria-hidden="true" focusable="false" style="flex:none"><line x1="2" y1="7" x2="28" y2="7" stroke="var(--landmark)" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="2.5" x2="2" y2="11.5" stroke="var(--landmark)" stroke-width="2" stroke-linecap="round"/><line x1="28" y1="2.5" x2="28" y2="11.5" stroke="var(--landmark)" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="7" r="3.6" fill="var(--mark)"/></svg><span class="nm">Rounding Helper</span></button>
     <div class="navright">
       <span class="tally" id="tally"></span>
-      <button class="iconbtn sq" id="soundbtn" aria-pressed="false" aria-label="Turn sound on"></button>
       <button class="iconbtn grownbtn" id="mHub">Grown-ups</button>
     </div>
   </div>
@@ -532,6 +529,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
         <h3>Guided steps</h3>
         <label><input type="checkbox" id="findplace" checked> Ask for the place and the decider</label>
         <label><input type="checkbox" id="scaffold" checked> Ask for the two neighbors first</label>
+      </div>
+
+      <div class="settings">
+        <h3>Sound</h3>
+        <label><input type="checkbox" id="soundbox"> Play a short sound on each answer</label>
+        <p class="quiet" style="margin:0">Off unless you turn it on, so a room full of devices stays quiet.</p>
       </div>
 
       <div class="about">
@@ -1542,26 +1545,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     state.seenIntro = true; save(); setMode("practice");
   };
 
-  function speakerIcon(on){
-    var body = '<path d="M4 8h3l4-3.5v11L7 12H4z" fill="currentColor"/>';
-    var tail = on
-      ? '<path d="M14 7a4 4 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
-      : '<path d="M14 7.5l4.5 5M18.5 7.5l-4.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>';
-    return '<svg width="19" height="19" viewBox="0 0 20 20" aria-hidden="true">' + body + tail + '</svg>';
-  }
-  function paintSound(){
-    var b = $("soundbtn");
-    b.innerHTML = speakerIcon(state.sound);
-    b.style.color = state.sound ? "var(--landmark)" : "var(--muted-solid)";
-    b.setAttribute("aria-pressed", state.sound ? "true" : "false");
-    b.setAttribute("aria-label", state.sound ? "Turn sound off" : "Turn sound on");
-  }
-  $("soundbtn").onclick = function(){
-    state.sound = !state.sound; save();
-    paintSound();
-    if(state.sound) sndStep();
+  // Sound lives with the grown-ups, not in the kid's nav, and stays off until
+  // someone turns it on. A classroom of devices should be quiet by default,
+  // and muting the device instead would also silence a screen reader.
+  $("soundbox").checked = state.sound;
+  $("soundbox").onchange = function(){
+    state.sound = this.checked; save();
+    if(state.sound) sndStep();   // so you hear what you just switched on
   };
-  paintSound();
 
   renderSheetOptions();
   setMode(state.seenIntro ? "practice" : "intro");

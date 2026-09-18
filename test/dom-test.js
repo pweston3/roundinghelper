@@ -202,6 +202,29 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
   ok(at === 5, `the fallback is the whole-number mix at index 5, not the decimal one (got ${at})`);
 }
 
+// ---------- B4. sound is a grown-up setting, off until asked for ----------
+{
+  const {d, $} = boot();
+  ok(!d.getElementById("soundbtn"), "no sound button in the kid's nav");
+  const nav = [...d.querySelectorAll("#topbar button")].map(b => b.id);
+  ok(!nav.some(id => /sound/i.test(id)), `nav holds only ${JSON.stringify(nav)}`);
+
+  const box = $("soundbox");
+  ok(!!box && box.type === "checkbox", "the control is a checkbox on the grown-ups page");
+  ok(d.getElementById("hub").contains(box), "and it lives inside the grown-ups section");
+  ok(box.checked === false, "sound is off on a first visit");
+
+  // turning it on has to persist, or a teacher sets it every morning
+  box.checked = true;
+  box.onchange.call(box);
+  ok(JSON.parse(d.defaultView.localStorage.getItem("rounding-v2")).sound === true,
+    "turning it on is saved");
+  box.checked = false;
+  box.onchange.call(box);
+  ok(JSON.parse(d.defaultView.localStorage.getItem("rounding-v2")).sound === false,
+    "turning it off is saved too");
+}
+
 // ---------- C. instruction text matches the digit the app accepts ----------
 const WHOLE = ["ones","tens","hundreds","thousands","ten thousands","hundred thousands","millions"];
 const DEC = ["tenths","hundredths","thousandths"];

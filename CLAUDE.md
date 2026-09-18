@@ -207,8 +207,13 @@ nothing else, advertised as also unlocking every level, which it did not.
 
 Touch targets are 44px minimum, and digits are 46×62 — NN/g recommends 2cm
 targets for young children versus 1cm for adults, and 9–12 year olds sit
-between. Motion is wrapped in `prefers-reduced-motion`. Sound is off by
-default. Parent and teacher tools live behind one "For grown-ups" door rather
+between. Motion is wrapped in `prefers-reduced-motion`.
+
+Sound is off by default and its checkbox lives on the grown-ups page, not in
+the kid's nav. It is not a preference to hand a child in a shared room: a
+classroom of devices should be quiet unless a teacher decides otherwise, and
+the alternative remedy, muting the device, also silences a screen reader or
+text-to-speech that some of these students depend on. Parent and teacher tools live behind one "For grown-ups" door rather
 than in the child's navigation.
 
 ## Open items
