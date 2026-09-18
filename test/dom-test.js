@@ -235,6 +235,14 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
     }
   }
 
+  // the title is the heaviest single on-page signal, and it is also one of only
+  // two places a kid meets the name, so both halves are worth pinning
+  const title = d.title;
+  ok(title.startsWith("Rounding Helper"),
+    `the title still leads with the product name (${JSON.stringify(title)})`);
+  ok(/rounding practice/i.test(title), "and carries the phrase people search for");
+  ok(title.length <= 65, `and fits a search result without truncation (${title.length} chars)`);
+
   const canon = d.querySelector('link[rel="canonical"]');
   ok(!!canon, "there is a canonical link");
   if(canon){

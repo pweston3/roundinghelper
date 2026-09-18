@@ -96,7 +96,9 @@ const server = http.createServer((req, res) => {
   await ctx.setOffline(false);
   const html = fs.readFileSync(path.join(DIR,"index.html"), "utf8");
   fs.writeFileSync(path.join(DIR,"index.html"),
-    html.replace("<title>Rounding Helper</title>", "<title>Rounding Helper NEWBUILD</title>"));
+    // match the tag, not its wording, so retitling the app cannot quietly turn
+    // this upgrade check into a no-op that still reports green
+    html.replace(/<title>[^<]*<\/title>/, "<title>NEWBUILD</title>"));
 
   await page.goto(base, {waitUntil:"load"});
   const t1 = await page.title();
