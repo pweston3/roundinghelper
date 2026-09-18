@@ -16,11 +16,26 @@ function boot(){
   return {d:dom.window.document, $:id=>dom.window.document.getElementById(id), dom};
 }
 
+// The question sits above the number line for a digit step and below it for a
+// choice step, so read whichever slot is live.
+function currentAsk($){
+  return $("askTop").hidden ? $("ask").textContent : $("askTopText").textContent;
+}
+
+// Steps no longer advance on a timer alone: a "Keep going" button appears and
+// either fills or gets tapped. Tapping it is what the test does.
+function advance($){
+  const b = $("cont");
+  if(b.hidden) return false;
+  b.click();
+  return true;
+}
+
 // wait for the step timer to move the question on
 async function waitForAskChange($, before, budget = 3500){
   const t0 = Date.now();
   while(Date.now() - t0 < budget){
-    if($("ask").textContent !== before) return true;
+    if(currentAsk($) !== before) return true;
     await sleep(40);
   }
   return false;
@@ -118,7 +133,7 @@ const placeNameAt = (fromRight, scale) => {
     [...d.querySelectorAll(".chip")][level].click();
     for(let rep = 0; rep < 40; rep++){
       $("next").click();
-      const asked = $("ask").textContent.match(/Tap the digit in the (.+) place/);
+      const asked = currentAsk($).match(/Tap the digit in the (.+) place/);
       ok(!!asked, `L${level}: stage 0 asks for a place`);
       if(!asked) break;
       const shown = $("hero").textContent;
@@ -140,7 +155,7 @@ const placeNameAt = (fromRight, scale) => {
   }
 }
 
-// ---------- D. all four scaffolding combinations complete a question ----------
+// ---------- D. all four toggle combinations complete a question ----------
 for(const findplace of [true, false]) for(const scaffold of [true, false]){
   const {d, $} = boot();
   const tag = `findplace=${findplace} scaffold=${scaffold}`;
@@ -156,14 +171,23 @@ for(const findplace of [true, false]) for(const scaffold of [true, false]){
     let guard = 0, done = false;
 
     while(guard++ < 8 && !done){
-      const ask = $("ask").textContent;
+      const ask = currentAsk($);
       const digitStage = /Tap the digit in the .+ place/.test(ask) ? "place"
                        : /tap the digit to the right/i.test(ask) ? "decider" : null;
 
       if(digitStage){
         seenStages.push(digitStage);
-        // the place digit keeps its .found mark into the decider stage, so each
-        // stage must look for its own mark, not just "any mark".
+        // the question must sit with the digits, not under the number line,
+        // and the line must stop competing for the tap
+        ok(!$("askTop").hidden, `${tag} L${level}: ${digitStage} question sits above the line`);
+        ok($("ask").textContent === "", `${tag} L${level}: lower slot empty on a digit step`);
+        ok($("linewrap").classList.contains("recede"),
+          `${tag} L${level}: number line recedes during the ${digitStage} step`);
+        ok($("hero").classList.contains("pick"),
+          `${tag} L${level}: digits carry the pressable look`);
+
+        // the place digit keeps its .found mark into the decider step, so each
+        // step must look for its own mark rather than any mark at all
         const want = digitStage === "place" ? "found" : "decider";
         const digits = [...$("hero").querySelectorAll(".digit")];
         let moved = false;
@@ -173,24 +197,29 @@ for(const findplace of [true, false]) for(const scaffold of [true, false]){
         }
         ok(moved, `${tag} L${level}: a digit was accepted at the ${digitStage} step`);
         if(!moved) break;
-        ok(await waitForAskChange($, ask), `${tag} L${level}: ${digitStage} step advanced`);
+        ok(advance($), `${tag} L${level}: Keep going advanced the ${digitStage} step`);
 
       } else if(/between\?/.test(ask)){
         seenStages.push("pair");
+        ok($("askTop").hidden, `${tag} L${level}: neighbour question sits with its buttons`);
+        ok(!$("linewrap").classList.contains("recede"),
+          `${tag} L${level}: number line at full strength for the neighbour step`);
         const btns = [...$("choices").children];
         let moved = false;
         for(const b of btns){ b.click(); if(b.classList.contains("right")){ moved = true; break; } }
-        ok(moved, `${tag} L${level}: a neighbor pair was accepted`);
+        ok(moved, `${tag} L${level}: a neighbour pair was accepted`);
         if(!moved) break;
-        ok(await waitForAskChange($, ask), `${tag} L${level}: neighbor step advanced`);
+        ok(advance($), `${tag} L${level}: Keep going advanced the neighbour step`);
 
       } else if(/closer to/.test(ask)){
         seenStages.push("final");
+        ok($("askTop").hidden, `${tag} L${level}: final question sits with its buttons`);
         const btns = [...$("choices").children];
         let moved = false;
         for(const b of btns){ b.click(); if(b.classList.contains("right")){ moved = true; break; } }
         ok(moved, `${tag} L${level}: the final answer was accepted`);
-        ok(!$("next").hidden, `${tag} L${level}: "Next number" appears`);
+        ok($("cont").hidden, `${tag} L${level}: no Keep going after the last step`);
+        ok(!$("next").hidden, `${tag} L${level}: "Next number" appears instead`);
         done = moved;
 
       } else {
@@ -198,16 +227,37 @@ for(const findplace of [true, false]) for(const scaffold of [true, false]){
         break;
       }
     }
-    ok(done, `${tag} L${level}: question completed (stages: ${seenStages.join(">") || "none"})`);
-
-    // the steps that each toggle turns on must actually be the ones that ran
-    ok(seenStages.includes("place") === findplace,
-      `${tag} L${level}: place step present == findplace`);
-    ok(seenStages.includes("decider") === findplace,
-      `${tag} L${level}: decider step present == findplace`);
-    ok(seenStages.includes("pair") === scaffold,
-      `${tag} L${level}: neighbor step present == scaffold`);
+    ok(done, `${tag} L${level}: question completed (steps: ${seenStages.join(">") || "none"})`);
+    ok(seenStages.includes("place") === findplace, `${tag} L${level}: place step present == findplace`);
+    ok(seenStages.includes("decider") === findplace, `${tag} L${level}: decider step present == findplace`);
+    ok(seenStages.includes("pair") === scaffold, `${tag} L${level}: neighbour step present == scaffold`);
   }
+}
+
+// ---------- E. the step button fills and also moves on by itself ----------
+{
+  const {d, $} = boot();
+  $("unlockall").click();
+  const digits = [...$("hero").querySelectorAll(".digit")];
+  for(const b of digits){ b.click(); if(b.classList.contains("found")) break; }
+
+  ok(!$("cont").hidden, "Keep going appears after a step is answered");
+  ok(/%$/.test($("contBar").style.width), "its bar was given a width to animate to");
+  ok(/ms linear$/.test($("contBar").style.transition), "the bar fills over a duration rather than jumping");
+  ok(d.activeElement === $("cont"), "focus lands on the button instead of the body");
+
+  const before = currentAsk($);
+  await sleep(7400);   // let it fill and fire on its own
+  ok(currentAsk($) !== before, "the step advances on its own once the bar fills");
+  ok($("cont").hidden, "the button goes away after advancing");
+
+  // starting a fresh question must cancel a step still counting down
+  const {$: $2} = boot();
+  const d2 = [...$2("hero").querySelectorAll(".digit")];
+  for(const b of d2){ b.click(); if(b.classList.contains("found")) break; }
+  ok(!$2("cont").hidden, "a step is pending");
+  $2("next").click();
+  ok($2("cont").hidden, "a new question clears the pending step button");
 }
 
 console.log("\n" + (checks - fails) + "/" + checks + " checks passed");

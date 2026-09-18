@@ -57,6 +57,16 @@ Why it's ordered this way:
   question asked about a different digit.
 - Only one digit is marked up at a time. Visual emphasis must always match the
   question currently being asked.
+- **The question sits next to the thing it asks about.** A digit question
+  renders above the number line, directly under the digits, with an arrow
+  pointing back up at them. It used to render below the line, where the two
+  nearest numbers on screen were the end labels, and a 4th grader tapped
+  those instead. The line also dims while a digit is the question, so it
+  stops competing for the tap.
+- **Steps do not vanish on a timer.** A "Keep going" button fills over
+  `STEP_WAIT` and then advances, or the kid taps it and goes at once. The
+  old bare 1.9s setTimeout gave no clue why the screen was about to change
+  and no way to hurry it.
 
 ## Copy rules
 
@@ -89,6 +99,12 @@ Why it's ordered this way:
   JavaScript and won't follow a `data:` URI, so the favicon trick doesn't
   work for it. They also cache hard: change the picture and the old one
   keeps appearing until the `?v=` on the tag is bumped.
+- **Tappable digits need a visible affordance, not a `:hover` rule.** The
+  digits are chips with a background and border during a tap step. Hover does
+  nothing on the tablets this actually runs on.
+- **Clear the instruction once its step is answered.** The digits stop being
+  tappable at that moment, so leaving "Tap the digit..." on screen above a
+  dead row of digits reads as a question that ignored you.
 - **`apple-touch-icon.png` is square and opaque on purpose.** iOS applies
   its own squircle mask, so rounding the corners first leaves dark notches
   around the result, and iOS composites any transparency onto black.

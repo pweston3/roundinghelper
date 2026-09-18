@@ -165,9 +165,24 @@ body{
   border-radius:10px;font-variant-numeric:tabular-nums;
   text-decoration-thickness:5px;text-underline-offset:9px;
 }
-.hero.pick .digit{cursor:pointer}
+.hero.pick .digit{
+  cursor:pointer;background:var(--landmark-soft);
+  box-shadow:inset 0 0 0 2px var(--rule);
+}
 .hero.pick .digit:hover{background:var(--mark-soft)}
 .hero.pick .digit:active{transform:scale(.94)}
+
+/* The instruction sits right under the digits it is about, with an arrow back
+   up to them. It used to sit below the number line, where the nearest numbers
+   were the two end labels, and a tester tapped those instead. */
+.asktop{margin:4px 0 2px;color:var(--landmark);text-align:center}
+.asktop[hidden]{display:none}
+.asktop .pointup{display:block;margin:0 auto -2px}
+.asktop .ask{margin:0 0 4px}
+
+/* While a digit is the question, the number line stops competing for the tap. */
+.linewrap{transition:opacity .35s ease}
+.linewrap.recede{opacity:.34}
 .digit.found{text-decoration:underline;text-decoration-color:var(--landmark);color:var(--landmark)}
 .digit.decider{box-shadow:inset 0 0 0 2.5px var(--mark);color:var(--mark)}
 .digit.miss{opacity:.4}
@@ -237,6 +252,17 @@ body{
 }
 .next:active{transform:scale(.99)}
 .next[hidden]{display:none}
+
+.cont{
+  position:relative;overflow:hidden;font:inherit;font-size:17px;font-weight:700;
+  width:100%;margin-top:14px;padding:15px;border-radius:16px;border:0;cursor:pointer;
+  background:var(--landmark-soft);color:var(--landmark);
+}
+.cont[hidden]{display:none}
+.cont:active{transform:scale(.99)}
+.contbar{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--landmark);opacity:.2}
+.contlab{position:relative}
+@media (prefers-reduced-motion: reduce){ .contbar{display:none} }
 
 .hintbtn{
   display:block;margin:12px auto 0;font:inherit;font-size:15px;font-weight:500;
@@ -356,6 +382,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   .star.bump{display:inline-block;animation:pop .55s ease-out}
   .feedback{animation:rise .25s ease-out}
   .choice.right{animation:pop .4s ease-out}
+  @keyframes bob{0%,100%{transform:translateY(0)}45%{transform:translateY(-7px)}}
+  @keyframes pointbob{0%,100%{transform:translateY(0)}45%{transform:translateY(-4px)}}
+  .hero.pick .digit.bob{animation:bob .52s ease-in-out 2}
+  .asktop .pointup{animation:pointbob 1.6s ease-in-out infinite}
 }
 
 @media print{
@@ -414,6 +444,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <p class="prompt" id="prompt"></p>
       <div class="hero" id="hero"></div>
 
+      <div class="asktop" id="askTop" hidden>
+        <svg class="pointup" width="24" height="13" viewBox="0 0 24 13" aria-hidden="true" focusable="false">
+          <path d="M2.5 10.5 L12 3 L21.5 10.5" fill="none" stroke="currentColor"
+                stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="ask" id="askTopText"></p>
+      </div>
+
       <div class="linewrap" id="linewrap">
         <div class="rail" id="rail">
           <div class="railline"></div>
@@ -437,6 +475,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <div class="choices" id="choices"></div>
 
       <p class="feedback" id="feedback" role="status" aria-live="polite"></p>
+      <button class="cont" id="cont" hidden>
+        <span class="contbar" id="contBar" aria-hidden="true"></span>
+        <span class="contlab">Keep going</span>
+      </button>
       <button class="next" id="next" hidden>Next number</button>
       <div class="levelup" id="levelup" hidden></div>
 
@@ -872,17 +914,76 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     }
   }
 
-  function goToStage(next, delay){
-    setTimeout(function(){
-      stage = next;
-      $("feedback").textContent = "";
-      $("hint").hidden = true;
-      $("hintbtn").textContent = "Show me a hint";
-      $("linewrap").hidden = (stage === 0);
-      showRailParts(stage >= 2);
-      renderHero();
-      renderChoices();
-    }, delay);
+  // How long the "Keep going" button takes to fill before moving on by itself.
+  // A step used to vanish after 1.9s with nothing to explain the pause. The
+  // button explains it, and a kid who has read the feedback can tap straight
+  // through instead of waiting.
+  var STEP_WAIT = 7000;
+  var stepTimer = null, bobTimer = null;
+
+  function clearStepTimers(){
+    if(stepTimer){ clearTimeout(stepTimer); stepTimer = null; }
+    if(bobTimer){ clearInterval(bobTimer); bobTimer = null; }
+  }
+
+  function hideContinue(){
+    var b = $("cont"), bar = $("contBar");
+    b.hidden = true;
+    b.onclick = null;
+    bar.style.transition = "none";
+    bar.style.width = "0%";
+  }
+
+  function showContinue(go){
+    var b = $("cont"), bar = $("contBar");
+    b.hidden = false;
+    bar.style.transition = "none";
+    bar.style.width = "0%";
+    void bar.offsetWidth;
+    bar.style.transition = "width " + STEP_WAIT + "ms linear";
+    bar.style.width = "100%";
+    b.onclick = function(){ clearStepTimers(); hideContinue(); go(); };
+    stepTimer = setTimeout(function(){ hideContinue(); go(); }, STEP_WAIT);
+    // Also puts keyboard focus somewhere useful; it used to fall to the body.
+    b.focus();
+  }
+
+  // Nudges the digits every few seconds while they are the question, for the
+  // kid who is looking at the wrong part of the screen.
+  function startBobbing(){
+    if(bobTimer) clearInterval(bobTimer);
+    bobTimer = setInterval(function(){
+      if(stage !== 0 && stage !== 2){ clearInterval(bobTimer); bobTimer = null; return; }
+      bobDigits();
+    }, 6000);
+  }
+
+  function bobDigits(){
+    var kids = $("hero").querySelectorAll(".digit");
+    Array.prototype.forEach.call(kids, function(el, i){
+      el.classList.remove("bob");
+      void el.offsetWidth;
+      el.style.animationDelay = (i * 55) + "ms";
+      el.classList.add("bob");
+    });
+  }
+
+  function enterStage(next){
+    clearStepTimers();
+    hideContinue();
+    stage = next;
+    $("feedback").textContent = "";
+    $("hint").hidden = true;
+    $("hintbtn").textContent = "Show me a hint";
+    $("linewrap").hidden = (stage === 0);
+    showRailParts(stage >= 2);
+    renderHero();
+    renderChoices();
+  }
+
+  function goToStage(next){
+    clearStepTimers();
+    showContinue(function(){ enterStage(next); });
   }
 
   function pickTarget(idx, btn){
@@ -892,8 +993,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       sndStep();
       Array.prototype.forEach.call($("hero").children, function(el){ el.onclick = null; el.disabled = true; });
       $("hero").className = "hero";
+      clearTopAsk();
       $("feedback").innerHTML = "Nice. <span class=\"why\">This digit stays or goes up by one. The rest become zeros.</span>";
-      goToStage(state.scaffold ? 1 : 2, 1900);
+      goToStage(state.scaffold ? 1 : 2);
     }else{
       btn.classList.add("miss");
       sndMiss();
@@ -913,8 +1015,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       sndStep();
       Array.prototype.forEach.call($("hero").children, function(el){ el.onclick = null; el.disabled = true; });
       $("hero").className = "hero";
+      clearTopAsk();
       $("feedback").innerHTML = "That's the decider. <span class=\"why\">This digit tells you which way " + qn() + " goes.</span>";
-      goToStage(3, 1900);
+      goToStage(3);
     }else{
       btn.classList.add("miss");
       sndMiss();
@@ -936,6 +1039,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   }
 
   function newQuestion(){
+    clearStepTimers();
+    hideContinue();
     q = makeQuestion(placeOf(state.level));
     stage = state.findplace ? 0 : (state.scaffold ? 1 : 3);
     firstTry = true;
@@ -957,19 +1062,40 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     renderChoices();
   }
 
+  // A digit question goes in the slot under the digits; a question about the
+  // two neighbours goes above its own buttons. The question always sits next
+  // to the thing it is asking about.
+  // Once a digit step is answered the digits stop being tappable, so the
+  // instruction telling the kid to tap them has to go too.
+  function clearTopAsk(){
+    $("askTop").hidden = true;
+    $("askTopText").innerHTML = "";
+    $("linewrap").classList.remove("recede");
+  }
+
+  function setAsk(html, aboveTheLine){
+    $("askTop").hidden = !aboveTheLine;
+    $("askTopText").innerHTML = aboveTheLine ? html : "";
+    $("ask").innerHTML = aboveTheLine ? "" : html;
+    $("ask").hidden = !!aboveTheLine;
+    $("linewrap").classList.toggle("recede", !!aboveTheLine);
+  }
+
   function renderChoices(){
     var box = $("choices");
     box.innerHTML = "";
 
     if(stage === 0){
       box.className = "choices";
-      $("ask").innerHTML = "Tap the digit in the <strong>" + q.digitName + "</strong> place";
+      setAsk("Tap the digit in the <strong>" + q.digitName + "</strong> place", true);
+      bobDigits();
+      startBobbing();
       return;
     }
 
     if(stage === 1){
       box.className = "choices";
-      $("ask").innerHTML = "Which two <strong>" + q.name + "s</strong> is " + qn() + " between?";
+      setAsk("Which two <strong>" + q.name + "s</strong> is " + qn() + " between?", false);
       q.pairs.forEach(function(pair){
         var b = document.createElement("button");
         b.className = "choice pair";
@@ -982,12 +1108,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
     if(stage === 2){
       box.className = "choices";
-      $("ask").innerHTML = "Now tap the digit <strong>to the right of</strong> the underlined one";
+      setAsk("Now tap the digit <strong>to the right of</strong> the underlined one", true);
+      bobDigits();
+      startBobbing();
       return;
     }
 
     box.className = "choices two";
-    $("ask").innerHTML = "So is " + qn() + " closer to&hellip;";
+    setAsk("So is " + qn() + " closer to&hellip;", false);
     [q.lo, q.hi].forEach(function(v){
       var b = document.createElement("button");
       b.className = "choice";
@@ -1008,7 +1136,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       lockChoices();
       showRailParts(true);
       $("feedback").innerHTML = "Yes! Those are its neighbors.";
-      goToStage(state.findplace ? 2 : 3, 1900);
+      goToStage(state.findplace ? 2 : 3);
     }else{
       btn.classList.add("wrong");
       btn.disabled = true;
