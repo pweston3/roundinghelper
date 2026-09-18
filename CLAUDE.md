@@ -70,6 +70,9 @@ Why it's ordered this way:
   slide across from the previous answer's position.
 - **Worksheet problems** are deduplicated across the whole sheet, not per
   section. The tens pool is small enough that repeats were likely otherwise.
+- **The favicon** is an inline SVG data URI. Every `#` in it must be written
+  as `%23`. Left raw, the browser reads it as a fragment, truncates the URI
+  and the icon vanishes with no error anywhere.
 - **`digitName` vs `name`** in `PLACES`: `name` is the place being rounded to
   ("hundred thousand"), `digitName` is the digit the student taps ("hundred
   thousands"). Getting these out of sync once made the app contradict itself.
@@ -104,6 +107,9 @@ than in the child's navigation.
 
 ## Open items
 
-- Verify the embedded font renders (headless testing can't check this)
 - Decide whether the kid-facing title stays "Rounding Helper"
-- Consider a favicon and an og:image for link previews
+- Add an og:image for link previews. It can't be a data URI the way the
+  favicon is, because social crawlers won't follow one, so it has to be a
+  real file served from the site.
+- No apple-touch-icon yet, so adding the site to an iPad home screen gives a
+  screenshot rather than an icon. That one needs a PNG.

@@ -52,7 +52,8 @@ ok(roundHalfUp("949999","100000") === "900,000", "oracle: 949999 -> nearest hund
 
 // ---------- A. no external requests, font embedded ----------
 ok(!/fonts\.(googleapis|gstatic)\.com/.test(html), "no Google Fonts reference");
-ok(!/<(script|img)[^>]+src=|<link[^>]+href=/i.test(html), "no external script/img/link tags");
+// inline data: URIs are fine; what must never appear is a remote reference
+ok(!/(src|href)\s*=\s*["']?(https?:)?\/\//i.test(html), "no remote script/img/link references");
 ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "font embedded as a data URI");
 
 // ---------- B. worksheet: key correctness, no duplicates, cap ----------
