@@ -13,6 +13,10 @@ one `<style>` block, the typeface embedded as a base64 WOFF2 data URI.
 
 Deployed on GitHub Pages. Editing means editing `index.html` and pushing.
 
+The one other file the site serves is `og.png`, the link-preview image. A
+browser never requests it, only a sharing platform's crawler does, so it
+costs the visitor nothing. `tools/og-image.html` regenerates it.
+
 ## Hard constraints — do not break these
 
 - **Zero external requests.** No CDNs, no Google Fonts, no analytics. The app
@@ -70,6 +74,10 @@ Why it's ordered this way:
   slide across from the previous answer's position.
 - **Worksheet problems** are deduplicated across the whole sheet, not per
   section. The tens pool is small enough that repeats were likely otherwise.
+- **`og:image` must be an absolute URL to a real file.** Crawlers don't run
+  JavaScript and won't follow a `data:` URI, so the favicon trick doesn't
+  work for it. They also cache hard: change the picture and the old one
+  keeps appearing until the `?v=` on the tag is bumped.
 - **The favicon** is an inline SVG data URI. Every `#` in it must be written
   as `%23`. Left raw, the browser reads it as a fragment, truncates the URI
   and the icon vanishes with no error anywhere.
@@ -108,8 +116,5 @@ than in the child's navigation.
 ## Open items
 
 - Decide whether the kid-facing title stays "Rounding Helper"
-- Add an og:image for link previews. It can't be a data URI the way the
-  favicon is, because social crawlers won't follow one, so it has to be a
-  real file served from the site.
 - No apple-touch-icon yet, so adding the site to an iPad home screen gives a
   screenshot rather than an icon. That one needs a PNG.
