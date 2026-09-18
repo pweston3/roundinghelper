@@ -67,8 +67,24 @@ ok(roundHalfUp("949999","100000") === "900,000", "oracle: 949999 -> nearest hund
 
 // ---------- A. no external requests, font embedded ----------
 ok(!/fonts\.(googleapis|gstatic)\.com/.test(html), "no Google Fonts reference");
-// inline data: URIs are fine; what must never appear is a remote reference
-ok(!/(src|href)\s*=\s*["']?(https?:)?\/\//i.test(html), "no remote script/img/link references");
+// Check what the browser would actually fetch, rather than pattern-matching the
+// source. A canonical link and a JSON-LD @context both carry absolute URLs and
+// neither is ever requested; a stylesheet or a script src is the real risk.
+{
+  const {d} = boot();
+  const fetched = [
+    ...d.querySelectorAll("script[src],img[src],iframe[src],video[src],audio[src],source[src],embed[src],object[data]"),
+    ...[...d.querySelectorAll("link[href]")].filter(l => {
+      const rel = (l.getAttribute("rel") || "").toLowerCase();
+      return !["canonical", "alternate", "author", "license", "manifest"].includes(rel);
+    })
+  ];
+  const remote = fetched
+    .map(e => e.getAttribute("src") || e.getAttribute("href") || e.getAttribute("data") || "")
+    .filter(u => /^(https?:)?\/\//i.test(u));
+  ok(remote.length === 0, `nothing on the page fetches from a remote origin (${JSON.stringify(remote)})`);
+  ok(!/@import\s+url\(\s*['"]?(https?:)?\/\//i.test(html), "no remote @import in the stylesheet");
+}
 ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "font embedded as a data URI");
 
 // ---------- B. worksheet: key correctness, no duplicates, cap ----------
@@ -167,6 +183,64 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
     let dupes = 0;
     probs.forEach(p => { if(seen.has(p.shown)) dupes++; seen.add(p.shown); });
     ok(dupes === 0, `run ${run}: ${dupes} duplicate problems across the sheet`);
+  }
+}
+
+// ---------- A2. structured data for search and answer engines ----------
+// Malformed JSON-LD fails silently: no error, no rich result, nothing to see.
+{
+  const {d} = boot();
+  const blocks = [...d.querySelectorAll('script[type="application/ld+json"]')];
+  ok(blocks.length === 1, `exactly one JSON-LD block (got ${blocks.length})`);
+
+  let data = null;
+  try { data = JSON.parse(blocks[0].textContent); }
+  catch(e){ ok(false, "the JSON-LD parses: " + e.message); }
+
+  if(data){
+    const graph = data["@graph"] || [data];
+    const app = graph.find(n => String(n["@type"]).includes("LearningResource"));
+    const faq = graph.find(n => n["@type"] === "FAQPage");
+    ok(!!app, "it describes a LearningResource");
+    ok(!!faq, "and carries an FAQ block");
+
+    ok(app.isAccessibleForFree === true, "marked free to use");
+    ok(app.isFamilyFriendly === true, "marked family friendly");
+    ok(/^\d+-\d+$/.test(app.typicalAgeRange || ""), `age range is a range (${app.typicalAgeRange})`);
+
+    // the standards are the thing a teacher's search resolves against, and the
+    // page claims them in prose, so the markup has to claim the same two
+    const named = (app.educationalAlignment || []).map(x => x.targetName).sort();
+    ok(named.length === 2, `two standards aligned (got ${named.length})`);
+    for(const std of ["4.NBT.A.3", "5.NBT.A.4"]){
+      ok(named.some(n => n.includes(std)), `aligned to ${std}`);
+      ok(d.getElementById("hub").textContent.includes(std),
+        `${std} is also claimed in the page's own text, not only in the markup`);
+    }
+
+    // marking up answers the page does not carry is a guideline violation
+    const hub = d.getElementById("hub").textContent.replace(/\s+/g, " ").toLowerCase();
+    const backing = {
+      "How does Rounding Helper teach rounding?": "the number line stays hidden until step 2",
+      "Which standards does Rounding Helper cover?": "round decimals to any place",
+      "Does Rounding Helper cost anything or need an account?": "no accounts and nothing sent anywhere",
+      "Does Rounding Helper work offline?": "works offline"
+    };
+    for(const q of faq.mainEntity){
+      ok(typeof q.acceptedAnswer.text === "string" && q.acceptedAnswer.text.length > 20,
+        `"${q.name}" has a real answer`);
+      const proof = backing[q.name];
+      ok(proof && hub.includes(proof.toLowerCase()),
+        `"${q.name}" is backed by text on the page ("${proof}")`);
+    }
+  }
+
+  const canon = d.querySelector('link[rel="canonical"]');
+  ok(!!canon, "there is a canonical link");
+  if(canon){
+    const og = d.querySelector('meta[property="og:url"]');
+    ok(canon.getAttribute("href") === og.getAttribute("content"),
+      `canonical matches og:url (${canon.getAttribute("href")})`);
   }
 }
 

@@ -132,6 +132,13 @@ cannot see an animation.
 
 ## Gotchas already fixed — don't regress them
 
+- **The JSON-LD may only claim what the page actually says.** The FAQ answers
+  in the structured data are all text carried under "For parents and teachers",
+  and the two CCSS standards are named in the page's own prose as well as in
+  the markup. Marking up answers the page does not carry is a search guideline
+  violation, not a shortcut. `test/dom-test.js` checks each answer against the
+  hub's text, and that the block parses at all, since malformed JSON-LD fails
+  silently.
 - **Never use CSS multicolumn on the worksheet.** WebKit honours `columns` on
   screen and drops it once it paginates, so an iPhone showed two tidy columns
   in the preview and then printed one long column across two sheets. The
