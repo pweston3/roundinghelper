@@ -26,7 +26,9 @@ const server = http.createServer((req, res) => {
   const file = path.join(DIR, p);
   if(!file.startsWith(DIR) || !fs.existsSync(file)){ res.writeHead(404); return res.end("nope"); }
   res.writeHead(200, {"Content-Type": TYPES[path.extname(file)] || "application/octet-stream",
-                      "Cache-Control": "no-cache"});
+                      // what GitHub Pages actually sends. With "no-cache" here the
+                      // suite cannot see a stale page being served, and once did not.
+                      "Cache-Control": "max-age=600"});
   res.end(fs.readFileSync(file));
 });
 
@@ -60,8 +62,8 @@ const server = http.createServer((req, res) => {
     const c = await caches.open(keys[0]);
     return {keys, urls: (await c.keys()).map(r => new URL(r.url).pathname).sort()};
   });
-  ok(cached.keys.length === 1 && cached.keys[0] === "rounding-v1",
-    `one cache named rounding-v1 (got ${JSON.stringify(cached.keys)})`);
+  ok(cached.keys.length === 1 && cached.keys[0] === "rounding-v2",
+    `one cache named rounding-v2 (got ${JSON.stringify(cached.keys)})`);
   for(const want of ["/", "/index.html", "/og.png", "/apple-touch-icon.png"]) {
     ok(cached.urls.includes(want), `precached ${want}`);
   }
@@ -103,15 +105,15 @@ const server = http.createServer((req, res) => {
   // ---- 4. version bump evicts the old cache ----
   console.log("\n[4] worker version bumped");
   const sw = fs.readFileSync(path.join(DIR,"sw.js"), "utf8");
-  fs.writeFileSync(path.join(DIR,"sw.js"), sw.replace('const VERSION = "v1"', 'const VERSION = "v2"'));
+  fs.writeFileSync(path.join(DIR,"sw.js"), sw.replace('const VERSION = "v2"', 'const VERSION = "v3"'));
   await page.goto(base, {waitUntil:"load"});
   await page.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r && r.update()));
   await page.waitForTimeout(2500);
   await page.goto(base, {waitUntil:"load"});
   await page.waitForTimeout(1500);
   const keys2 = await page.evaluate(() => caches.keys());
-  ok(keys2.includes("rounding-v2"), `v2 cache created (got ${JSON.stringify(keys2)})`);
-  ok(!keys2.includes("rounding-v1"), "v1 cache deleted, no stale assets left behind");
+  ok(keys2.includes("rounding-v3"), `v3 cache created (got ${JSON.stringify(keys2)})`);
+  ok(!keys2.includes("rounding-v2"), "old cache deleted, no stale assets left behind");
 
   // ---- 5. still offline-capable after the upgrade ----
   console.log("\n[5] offline again after upgrading");

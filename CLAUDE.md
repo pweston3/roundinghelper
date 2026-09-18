@@ -93,6 +93,12 @@ Why it's ordered this way:
   slide across from the previous answer's position.
 - **Worksheet problems** are deduplicated across the whole sheet, not per
   section. The tens pool is small enough that repeats were likely otherwise.
+- **The page fetch in `sw.js` must bypass the HTTP cache.** A plain `fetch()`
+  consults it first, and GitHub Pages sends `max-age=600` on HTML, so
+  network-first quietly stopped reaching the network for ten minutes at a
+  time and re-cached the stale page it got back. `cache: "no-store"` is
+  load-bearing. `test/sw-test.js` serves `max-age=600` for the same reason:
+  with `no-cache` it could not see this happen, and once did not.
 - **The service worker is network-first for the page, on purpose.** A cached
   build can therefore never stick, which is the usual way a service worker
   ruins a static site. Do not "optimise" it to cache-first. `test/sw-test.js`

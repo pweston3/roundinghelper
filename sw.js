@@ -11,7 +11,7 @@
 // Everything here is same-origin. The worker never touches a third-party URL,
 // and nothing is sent anywhere.
 
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = "rounding-" + VERSION;
 const PRECACHE = ["./", "./index.html", "./og.png", "./apple-touch-icon.png"];
 const NET_TIMEOUT = 3000;
@@ -50,7 +50,14 @@ self.addEventListener("fetch", (event) => {
 async function networkFirst(req) {
   const cache = await caches.open(CACHE);
   try {
-    const res = await withTimeout(fetch(req), NET_TIMEOUT);
+    // cache:"no-store" is load-bearing. A plain fetch() consults the browser's
+    // HTTP cache first, and GitHub Pages sends max-age=600 on HTML, so
+    // "network-first" would spend ten minutes never reaching the network and
+    // would re-cache the stale page it got back.
+    const res = await withTimeout(fetch(req.url, {
+      cache: "no-store",
+      credentials: "same-origin"
+    }), NET_TIMEOUT);
     if (res && res.ok) cache.put(req, res.clone());
     return res;
   } catch (err) {
