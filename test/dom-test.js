@@ -94,11 +94,22 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
         place = el.textContent.match(/Round to the nearest (.+)\.$/)[1];
         ok(PLACE_STR[place] !== undefined, "known heading: " + place);
       } else if(el.tagName === "OL"){
-        for(const li of el.children) probs.push({shown: li.textContent.trim(), place});
+        // each row is an ordinal, a value and an answer rule, in fixed slots
+        for(const li of el.children){
+          ok(li.children.length === 3, `run ${run}: a row has ordinal, value and rule`);
+          probs.push({
+            num: li.querySelector(".pn").textContent.trim(),
+            shown: li.querySelector(".pv").textContent.trim(),
+            place
+          });
+        }
       }
     }
-    const key = [...sheet.querySelector(".key").textContent
-      .replace(/^Answer key/, "").matchAll(/\d+\.\s*([\d,]+(?:\.\d+)?)/g)].map(m => m[1]);
+    const keyRows = [...sheet.querySelectorAll(".key .ki")].map(k => ({
+      num: k.querySelector(".pn").textContent.trim(),
+      val: k.querySelector(".pv").textContent.trim()
+    }));
+    const key = keyRows.map(k => k.val);
 
     ok(probs.length === key.length,
       `run ${run}: ${probs.length} problems vs ${key.length} key entries`);
@@ -110,7 +121,17 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
       if(!p.shown.includes(".")){
         ok(Number(p.shown.replace(/,/g, "")) <= 1000000, "value within cap: " + p.shown);
       }
+      // the key must be numbered to match the sheet, or it cannot be graded against
+      ok(keyRows[i] && keyRows[i].num === p.num,
+        `run ${run} #${i+1}: key ordinal ${keyRows[i] && keyRows[i].num} matches sheet ordinal ${p.num}`);
+      ok(p.num === String(i + 1) + ".", `run ${run}: rows numbered continuously (${p.num})`);
     });
+
+    // the score box must total what the sheet actually contains
+    const score = sheet.querySelector(".sheet-head").textContent;
+    ok(score.includes("/ " + probs.length),
+      `run ${run}: score box reads / ${probs.length} (head = "${score.replace(/\s+/g," ").trim()}")`);
+    ok(!score.includes("TOTALCOUNT"), `run ${run}: the total placeholder was filled in`);
 
     const seen = new Set();
     let dupes = 0;
