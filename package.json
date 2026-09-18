@@ -9,7 +9,8 @@
     "test:print": "node test/print-test.js",
     "eval": "node test/quality-eval.js",
     "check": "npm test && npm run eval",
-    "test:site": "node test/site-test.js"
+    "test:site": "node test/site-test.js",
+    "test:fold": "node test/fold-test.js"
   },
   "devDependencies": {
     "jsdom": "^30.1.0"

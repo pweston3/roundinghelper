@@ -117,7 +117,9 @@ burst doubles and the card pulses but nothing says "Three in a row". The
 teaching line wins, by design.
 
 `test/motion-test.js` covers all of this in a real browser, since jsdom
-cannot see an animation.
+cannot see an animation. `test/fold-test.js` is the other layout test, for the
+same reason: jsdom reports every element as 0x0, so only a browser can say
+whether the button is on screen.
 
 ## Copy rules
 
@@ -216,6 +218,20 @@ cannot see an animation.
   while the ones place on the whole-number level sits left of the point.
   `placeHint()` works from `q.p` and `q.scale`, and `test/dom-test.js` follows
   the hint's own directions to check where they land.
+- **The last step has to fit a phone without scrolling, and it is the only
+  step that can fail to.** `showContinue()` focuses "Keep going", and the
+  browser scrolls a focused control into view, so the first three steps rescue
+  themselves. `answerFinal` passes `preventScroll` on purpose, to keep the dot's
+  celebration on screen, so "Next number" sat 84px below the fold on an iPhone
+  SE and nothing brought it back. Two things fix it. An answered choice
+  question is cleared (`clearAsk()`), the same rule the digit steps already
+  follow. And `@media (max-height:700px)` gives back empty space only: card
+  padding, margins, and the rail's slack above the marker and below the gap
+  label. The rail's vertical geometry hangs off `--line-y` so that is one
+  number, and `burst()` reads the confetti origin off the marker instead of a
+  literal 69px. No touch target shrinks. `test/fold-test.js` walks every step
+  at six phone viewports, with a seeded question stream so the longest
+  messages (exactly halfway, streak milestone) are always in the sample.
 - **`digitName` vs `name`** in `PLACES`: `name` is the place being rounded to
   ("hundred thousand"), `digitName` is the digit the student taps ("hundred
   thousands"). Getting these out of sync once made the app contradict itself.
