@@ -188,6 +188,16 @@ npm install jsdom
 node -e "const {JSDOM}=require('jsdom'); /* load index.html, click through */"
 ```
 
+`test/quality-eval.js` (`npm run eval`) is the one to run before a classroom
+uses this. It samples thousands of real questions per level and checks the
+shape of the set rather than single answers: the halfway rate, whether the
+answer leans to one neighbour, how often a number repeats inside a sitting.
+It found that "always tap the bigger neighbour" scored 60%, because the old
+generator injected 16% halfway cases on top of the ones that occur naturally
+and halfway always rounds up. `HALF_RATE` and the derived `UP_RATE` in
+`makeQuestion` hold it at a coin flip; change `HALF_RATE` and the balance
+follows.
+
 Worth asserting after any change to question generation or the step flow:
 
 - every level's instruction text matches the digit the app actually accepts

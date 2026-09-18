@@ -746,19 +746,39 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   function qn(){ return show(q.n, q.scale); }
   function qp(u){ return show(u, q.scale, q.p); }
 
+  // How often the exact halfway case comes up, now the same on every level. It
+  // used to be a flat 16% injected on top of whatever landed on halfway by
+  // chance, and chance is one number in ten at the tens place but one in a
+  // hundred thousand at the coarse end, so tens and hundredths ran at 26%
+  // while the rest ran at 16%.
+  var HALF_RATE = 0.14;
+  // Halfway always rounds up, so the rest has to lean the other way or the
+  // whole set tilts. It did: "always tap the bigger neighbour" scored 60%, and
+  // a kid could stop reasoning entirely and still look fluent.
+  // Derived, so changing HALF_RATE keeps the set balanced.
+  var UP_RATE = (0.5 - HALF_RATE) / (1 - HALF_RATE);
+
   function makeQuestion(pl){
     var p = pl.p, scale = pl.scale;
     var digits = pl.lo + Math.floor(Math.random()*(pl.hi - pl.lo + 1));
     var min = Math.pow(10,digits-1), max = Math.pow(10,digits)-1;
-    var n, tries = 0;
-    do{
-      n = min + Math.floor(Math.random()*(max-min+1));
-      tries++;
-    }while(n % p === 0 && tries < 30);
-    if(n % p === 0) n += Math.floor(p/4) || 1;
-    if(Math.random() < 0.16) n = Math.floor(n/p)*p + p/2;
+    var n = min + Math.floor(Math.random()*(max-min+1));
 
-    var lo = Math.floor(n/p)*p, hi = lo + p, mid = lo + p/2;
+    // Keep the block the number landed in, then choose where inside it it
+    // sits. min is a power of ten and so a multiple of p, which is why lo plus
+    // any offset under p is still inside the digit range for this level. An
+    // offset of 1..p-1 also means the number is never already round.
+    var lo = Math.floor(n/p)*p, half = p/2, r;
+    if(Math.random() < HALF_RATE){
+      r = half;                                             // sits dead centre
+    }else if(Math.random() < UP_RATE){
+      r = half + 1 + Math.floor(Math.random()*(half - 1));  // goes up
+    }else{
+      r = 1 + Math.floor(Math.random()*(half - 1));         // stays
+    }
+    n = lo + r;
+
+    var hi = lo + p, mid = lo + half;
     var pairs = [[lo,hi]], cand = [];
     if(lo - p >= 0) cand.push([lo-p, lo]);
     cand.push([hi, hi+p]);

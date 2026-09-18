@@ -5,7 +5,9 @@
   "scripts": {
     "test": "node test/dom-test.js",
     "test:sw": "node test/sw-test.js",
-    "test:motion": "node test/motion-test.js"
+    "test:motion": "node test/motion-test.js",
+    "eval": "node test/quality-eval.js",
+    "check": "npm test && npm run eval"
   },
   "devDependencies": {
     "jsdom": "^30.1.0"

@@ -55,6 +55,14 @@ same way, including that they all stand down under `prefers-reduced-motion`.
 node test/motion-test.js
 ```
 
+`npm run eval` is the question-quality check. It samples thousands of real
+questions per level and asserts on the shape of the whole set, which is what
+catches a generator that lets a kid guess well without reasoning.
+
+```bash
+npm run check   # correctness and quality together
+```
+
 ## Privacy
 
 No ads, no accounts, no analytics, and no third-party requests at all.
