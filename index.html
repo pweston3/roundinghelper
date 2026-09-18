@@ -1251,7 +1251,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       btn.classList.add("wrong");
       btn.disabled = true;
       sndMiss();
+      // The increment is saved, so the reset has to be too. Without this a
+      // miss then a reload restores the streak, and a milestone can be
+      // reached without ever getting that many right in a row.
       state.streak = 0;
+      save();
       setDotMood("shake");
       setTimeout(dotWaits, 350);
       $("feedback").innerHTML = "Try again. <span class=\"why\">Is the dot to the left of halfway, or to the right?</span>";

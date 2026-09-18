@@ -48,6 +48,13 @@ npm install playwright && npx playwright install chromium
 node test/sw-test.js
 ```
 
+`test/motion-test.js` covers the dot's animations and the celebrations the
+same way, including that they all stand down under `prefers-reduced-motion`.
+
+```bash
+node test/motion-test.js
+```
+
 ## Privacy
 
 No ads, no accounts, no analytics, and no third-party requests at all.

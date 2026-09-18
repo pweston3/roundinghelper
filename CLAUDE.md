@@ -100,6 +100,19 @@ All of it sits inside `prefers-reduced-motion: no-preference`; `calm()` in
 the script skips the confetti and the star flight when the OS asks for
 reduced motion. Nothing here changes on a timer without a button first.
 
+`state.streak` is saved on both edges. The increment is easy to remember and
+the reset on a miss is easy to forget; without the save, a miss then a reload
+restores the streak and a milestone can be reached without ever getting that
+many right in a row.
+
+An exact-halfway question prints its own headline and never calls
+`cheerLine()`, so on a milestone that happens to land on a halfway number the
+burst doubles and the card pulses but nothing says "Three in a row". The
+teaching line wins, by design.
+
+`test/motion-test.js` covers all of this in a real browser, since jsdom
+cannot see an animation.
+
 ## Copy rules
 
 - Written for a 9-year-old. Short sentences, no em-dash clauses, "less than 5"
