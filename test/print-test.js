@@ -154,6 +154,50 @@ const measure = (p, W) => p.evaluate(({W}) => {
     await ctx.close();
   }
 
+  // ---------- 4b. the controls are live, and the button means one thing ----------
+  console.log("\n[4b] live controls");
+  {
+    const ctx = await browser.newContext({viewport:{width:390, height:900}});
+    const p = await openSheet(ctx);
+
+    // a sheet is already there; nothing to press to see one
+    ok((await p.$$eval("#pageStack .page", e => e.length)) > 0,
+      "a worksheet is on screen on arrival");
+    ok((await p.textContent("#sheetMake")).trim() === "New numbers",
+      `the button says what it does (got "${(await p.textContent("#sheetMake")).trim()}")`);
+
+    const read = () => p.$$eval("#pageStack .pv", e => e.map(x => x.textContent).join("|"));
+
+    // the button gives different numbers
+    const before = await read();
+    await p.click("#sheetMake");
+    await p.waitForTimeout(150);
+    ok((await read()) !== before, "pressing it produces a different set of numbers");
+
+    // and every control applies without pressing anything
+    let seen = await read();
+    await p.selectOption("#sheetCount", "10");
+    await p.waitForTimeout(150);
+    ok((await read()) !== seen, "changing the count rebuilds on its own");
+
+    seen = await read();
+    await p.setChecked("#sheetKey", true);
+    await p.waitForTimeout(150);
+    ok((await p.$$eval("#pageStack .page", e => e.length)) === 2,
+      "ticking the answer key adds its page without pressing anything");
+
+    seen = await read();
+    await p.uncheck("#sheetPlaces input[data-place='0']");
+    await p.waitForTimeout(150);
+    ok((await read()) !== seen, "unticking a place rebuilds on its own");
+
+    seen = await read();
+    await p.click("#pickall");
+    await p.waitForTimeout(150);
+    ok((await read()) !== seen, "Select all rebuilds too, though it sets the boxes in code");
+    await ctx.close();
+  }
+
   // ---------- 5. select all / clear all ----------
   console.log("\n[5] select all");
   {

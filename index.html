@@ -333,7 +333,8 @@ body{
   width:816px;min-height:1056px;box-sizing:border-box;padding:53px;
   background:#fff;box-shadow:0 2px 16px rgba(0,0,0,.28);margin-bottom:24px;
 }
-.previewnote{font-size:13px;color:var(--muted-solid);margin:0 0 10px}
+#sheetMake{display:inline-flex;align-items:center;gap:8px}
+#sheetMake svg{display:block;flex:none}
 /* Where the printer will actually cut, drawn on the preview when a sheet runs
    past one page. */
 .pbreak{position:absolute;left:0;right:0;border-top:2px dashed #9AA7B1;pointer-events:none}
@@ -581,13 +582,16 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
           <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer">
             <input type="checkbox" id="sheetKey" style="width:18px;height:18px;accent-color:var(--landmark)"> Answer key
           </label>
-          <button id="sheetMake">Make worksheet</button>
+          <button id="sheetMake"><svg width="17" height="17" viewBox="0 0 20 20" aria-hidden="true"
+            focusable="false"><path d="M16.5 7A7 7 0 1 0 17 10" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round"/><path d="M11.5 6.6h5.2V1.4" fill="none"
+            stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round"/></svg>New numbers</button>
           <button id="sheetPrint" style="background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px var(--rule)">Print</button>
         </div>
         <p class="printhelp" id="printhelp" hidden></p>
       </div>
       <div class="pagewrap" id="pageWrap" hidden>
-        <p class="previewnote">This is exactly what prints.</p>
         <div class="pagestack" id="pageStack"></div>
       </div>
     </div>
@@ -1477,6 +1481,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       var all = sheetBoxes().every(function(b){ return b.checked; });
       sheetBoxes().forEach(function(b){ b.checked = !all; });
       paintPickAll();
+      buildSheet();   // setting these in code fires no change event of its own
     };
     box.addEventListener("change", paintPickAll);
     paintPickAll();
@@ -1613,7 +1618,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
   window.addEventListener("resize", fitPreview);
 
+  // The button used to be the only way to see anything, so it carried two
+  // jobs: apply my settings, and give me different numbers. A teacher could
+  // not tell which. Every control now applies on change, which leaves the
+  // button meaning only "different numbers" and lets it say so.
   $("sheetMake").onclick = buildSheet;
+  $("sheetCount").onchange = buildSheet;
+  $("sheetKey").onchange = buildSheet;
+  $("sheetPlaces").addEventListener("change", buildSheet);
 
   function printableDoc(){
     var pages = [].slice.call($("pageStack").children).map(function(el){ return el.innerHTML; });
@@ -1674,7 +1686,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   $("mHome").onclick = function(){ setMode(state.seenIntro ? "practice" : "intro"); };
   $("back0").onclick = function(){ setMode("practice"); };
   $("mLab").onclick = function(){ setMode("lab"); };
-  $("mSheet").onclick = function(){ setMode("sheet"); };
+  $("mSheet").onclick = function(){ setMode("sheet"); buildSheet(); };
   $("mIntro").onclick = function(){ setMode("intro"); };
   $("back1").onclick = $("back2").onclick = function(){ setMode("hub"); };
   $("introStart").onclick = function(){

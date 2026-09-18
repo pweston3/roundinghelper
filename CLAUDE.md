@@ -140,6 +140,12 @@ cannot see an animation.
   they cannot drift apart; the preview also needs it injected into this
   document or it silently falls back to the app's own styling and stops being
   a preview.
+- **The worksheet controls apply on change, and the button only reshuffles.**
+  One button used to carry both jobs, apply my settings and give me different
+  numbers, and a teacher could not tell which it did. A sheet is now built on
+  arrival, every control rebuilds on change, and the button says "New
+  numbers". `#pickall` sets the boxes in code, which fires no change event, so
+  it has to call `buildSheet()` itself.
 - **The default sheet has to fit one piece of paper.** Five whole-number
   places at six each is 30 problems, and it sat 146px over a page until the
   row and heading spacing was tightened. `test/print-test.js` measures the
