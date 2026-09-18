@@ -34,6 +34,12 @@ makes beyond itself, and it sends nothing anywhere.
 - **All rounding math runs on scaled integers**, never floats. Each place in
   `PLACES` carries a `scale`; a displayed value is `units / scale`. This is why
   decimals don't produce 0.30000000000000004. Keep new work in integer units.
+- **A first visit starts on the whole-number mix, not on tens.** `START_LEVEL`
+  finds it by name so reordering `LEVELS` cannot point it elsewhere. A single
+  place lets a kid answer without reading the question, which is the habit
+  this app exists to break. The load path has to fall back to `START_LEVEL`
+  for a save with no `level`: `s.level|0` turns a missing field into 0, which
+  is tens.
 - **Every level is pickable at any time.** There is no gating, no padlocks,
   no "5 correct to unlock the next one" and no unlock-all escape hatch. The
   chips are ordered so the progression is still visible; a kid who is already

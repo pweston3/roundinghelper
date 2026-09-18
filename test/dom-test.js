@@ -150,6 +150,15 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
   ok(!$("unlockall"), "the unlock-all link is gone");
   ok(!$("levelup"), "the level-up banner is gone");
 
+  // a first visit lands on the whole-number mix, not on tens
+  const fresh = [...d.querySelectorAll(".chip")].findIndex(c => c.getAttribute("aria-pressed") === "true");
+  ok(chips[fresh].textContent.trim() === "mix of these",
+    `a fresh visit starts on "mix of these" (got "${chips[fresh].textContent.trim()}")`);
+  ok(fresh === 5, `and it is the whole-number mix, not the decimal one (index ${fresh})`);
+  const p0 = $("prompt").textContent;
+  ok(/Round to the nearest (ten|hundred|thousand|ten thousand|hundred thousand)$/.test(p0),
+    `its first question is a whole-number place ("${p0}")`);
+
   // picking the last level from a standing start must just work
   chips[chips.length - 1].click();
   // renderChips rebuilds the row, so the pressed state lives on a fresh node
@@ -163,6 +172,34 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
   const saved = JSON.parse(d.defaultView.localStorage.getItem("rounding-v2"));
   ok(saved.level === 9, `the pick is saved (level ${saved.level})`);
   ok(saved.unlocked === undefined, "no unlocked field is written any more");
+}
+
+// ---------- B3. a save missing "level" falls back to the default ----------
+// `s.level|0` turns a missing field into 0, which used to be the default and is
+// now tens, so a partial save silently ignored START_LEVEL.
+{
+  for(const [store, want, label] of [
+    [null,                          "mix of these", "no storage at all"],
+    [{seenIntro:true},              "mix of these", "save with no level field"],
+    [{seenIntro:true, level:null},  "mix of these", "save with a null level"],
+    [{seenIntro:true, level:0},     "ten",          "save that really is on tens"],
+    [{seenIntro:true, level:99},    "mix of these", "save with an out-of-range level"]
+  ]){
+    const dom = new JSDOM(html, {runScripts:"dangerously", pretendToBeVisual:true,
+      url:"https://roundinghelper.com/", virtualConsole:vc,
+      beforeParse(w){ if(store) w.localStorage.setItem("rounding-v2", JSON.stringify(store)); }});
+    const dd = dom.window.document;
+    const on = [...dd.querySelectorAll(".chip")].find(c => c.getAttribute("aria-pressed") === "true");
+    ok(on && on.textContent.trim() === want,
+      `${label}: starts on "${want}" (got "${on ? on.textContent.trim() : "none"}")`);
+  }
+  // level 99 clamps to LAST, which is the decimals mix, so check it is not that
+  const dom2 = new JSDOM(html, {runScripts:"dangerously", pretendToBeVisual:true,
+    url:"https://roundinghelper.com/", virtualConsole:vc,
+    beforeParse(w){ w.localStorage.setItem("rounding-v2", JSON.stringify({seenIntro:true})); }});
+  const chips2 = [...dom2.window.document.querySelectorAll(".chip")];
+  const at = chips2.findIndex(c => c.getAttribute("aria-pressed") === "true");
+  ok(at === 5, `the fallback is the whole-number mix at index 5, not the decimal one (got ${at})`);
 }
 
 // ---------- C. instruction text matches the digit the app accepts ----------

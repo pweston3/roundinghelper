@@ -649,6 +649,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     {name:"mixed decimals",   label:"mix of these", pick:[5,6,7]}
   ];
   var LAST = LEVELS.length - 1;
+
+  // Where a first visit starts. The whole-number mix rather than tens, because
+  // a single place lets a kid answer without reading the question, which is
+  // the exact habit this app exists to break. Looked up by name so reordering
+  // LEVELS cannot silently point it somewhere else.
+  var START_LEVEL = (function(){
+    for(var i = 0; i < LEVELS.length; i++) if(LEVELS[i].name === "mixed-up") return i;
+    return 0;
+  })();
   var WHOLE_NAMES = ["ones","tens","hundreds","thousands","ten thousands","hundred thousands","millions"];
   var DEC_NAMES = ["tenths","hundredths","thousandths"];
 
@@ -663,7 +672,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   }
 
   var state = {
-    level: 0,
+    level: START_LEVEL,
     stars: 0,
     streak: 0,
     scaffold: true,
@@ -677,7 +686,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     if(raw){
       var s = JSON.parse(raw);
       if(s && typeof s === "object"){
-        state.level = Math.min(Math.max(s.level|0,0),LAST);
+        // A missing level must fall back to START_LEVEL, not to 0. `s.level|0`
+        // turns undefined into 0, which used to be the default and is now tens.
+        state.level = (typeof s.level === "number" && isFinite(s.level))
+          ? Math.min(Math.max(s.level|0,0),LAST)
+          : START_LEVEL;
         state.stars = Math.max(s.stars|0,0);
         state.streak = Math.max(s.streak|0,0);
         state.scaffold = s.scaffold !== false;
