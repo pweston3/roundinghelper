@@ -1149,6 +1149,40 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     $("linewrap").classList.toggle("recede", !!aboveTheLine);
   }
 
+  function steps(n){ return n === 1 ? "1 step" : n + " steps"; }
+
+  // How to find the place the question asked for. This used to be chosen from
+  // the shape of the number instead of the target, so any number with a comma
+  // got the walk-left-from-the-comma hint even when the answer was to its
+  // right: "5,950 to the nearest hundred" was told how to find thousands.
+  // Decimals had the mirror of it, always pointing right, while the ones place
+  // on the whole-number level sits left of the point.
+  function placeHint(){
+    var k = decPlaces(q.p) - decPlaces(q.scale);   // 2 = hundreds, 0 = ones, -1 = tenths
+    var disp = qn(), dn = q.digitName;
+
+    if(disp.indexOf(".") > -1){
+      if(k < 0){
+        return "Find the <strong>decimal point</strong>. Go <strong>" + steps(-k) +
+               " right</strong> from it. That digit is the " + dn + " place.";
+      }
+      return "Find the <strong>decimal point</strong>. The digit just <strong>left</strong> " +
+             "of it is the " + dn + " place.";
+    }
+
+    // Whole numbers cap at 1,000,000, so there is never more than one comma.
+    if(disp.indexOf(",") > -1){
+      var left = k >= 3;
+      return "The comma says <strong>thousand</strong>. Go <strong>" +
+             steps(left ? k - 2 : 3 - k) + (left ? " left" : " right") +
+             "</strong> from it. That digit is the " + dn + " place.";
+    }
+
+    var names = ["ones", "tens", "hundreds", "thousands"].slice(0, k + 1);
+    names[names.length - 1] = "<strong>" + names[names.length - 1] + "</strong>";
+    return "Count from the right: " + names.join(", ") + ".";
+  }
+
   function renderChoices(){
     var box = $("choices");
     box.innerHTML = "";
@@ -1270,16 +1304,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     var s = String(q.n);
     var idx = targetIndex();
     if(stage === 0 || stage === 1 || stage === 2){
-      var html0;
-      if(q.scale > 1){
-        html0 = "<p style='margin:0'>Start at the <strong>decimal point</strong>. One step right is tenths. " +
-                "Two steps right is hundredths.</p>";
-      }else if(qn().indexOf(",") > -1){
-        html0 = "<p style='margin:0'>The comma says <strong>thousand</strong>. Walk left from it: " +
-                "1 step is thousands, 2 steps is ten thousands, 3 steps is hundred thousands.</p>";
-      }else{
-        html0 = "<p style='margin:0'>Count from the right: ones, tens, hundreds, thousands.</p>";
-      }
+      var html0 = "<p style='margin:0'>" + placeHint() + "</p>";
       if(stage === 1){
         html0 = "<p style='margin:0'>Keep the underlined digit and everything before it. Change the rest to zeros. " +
                 "That's the smaller neighbor. The bigger one is one " + q.name + " more.</p>";

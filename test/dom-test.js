@@ -200,6 +200,67 @@ const placeNameAt = (fromRight, scale) => {
   }
 }
 
+// ---------- C2. the hint's directions land on the digit being asked for ----------
+// The hint used to be chosen from the shape of the number rather than the place
+// in the question, so a comma sent it walking left whatever was asked. This
+// follows the hint literally and checks where it points.
+{
+  const {d, $} = boot();
+  for(let level = 0; level < 10; level++){
+    [...d.querySelectorAll(".chip")][level].click();
+    for(let rep = 0; rep < 25; rep++){
+      $("next").click();
+      const asked = currentAsk($).match(/Tap the digit in the (.+) place/);
+      ok(!!asked, `L${level}: stage 0 asks for a place`);
+      if(!asked) break;
+
+      if($("hint").hidden) $("hintbtn").click();
+      const hint = $("hint").textContent.trim();
+      const shown = $("hero").textContent;
+
+      ok(hint.includes(asked[1]) || /Count from the right/.test(hint),
+        `L${level}: hint names the "${asked[1]}" place (hint: "${hint}", number: ${shown})`);
+
+      // where does the hint actually point?
+      const digits = [...$("hero").querySelectorAll(".digit")];
+      const glyphs = [...shown];                       // includes , and .
+      let aimed = -1;
+      const m = hint.match(/Go (\d+) steps? (left|right)/);
+      if(m){
+        const mark = hint.includes("decimal point") ? "." : ",";
+        const at = glyphs.indexOf(mark);
+        ok(at !== -1, `L${level}: the landmark "${mark}" is on screen (${shown})`);
+        const dir = m[2] === "left" ? -1 : 1;
+        let i = at, moved = 0;
+        while(moved < Number(m[1])){
+          i += dir;
+          if(i < 0 || i >= glyphs.length) break;
+          if(glyphs[i] !== "," && glyphs[i] !== ".") moved++;
+        }
+        ok(moved === Number(m[1]), `L${level}: the walk stays on the number (${shown}, "${hint}")`);
+        aimed = glyphs.slice(0, i).filter(c => c !== "," && c !== ".").length;
+      } else if(/just .?left.? of it/.test(hint)) {
+        const at = glyphs.indexOf(".");
+        aimed = glyphs.slice(0, at).filter(c => c !== "," && c !== ".").length - 1;
+      } else {
+        // "Count from the right: ones, tens, hundreds."
+        const listed = hint.split(":")[1].replace(".", "").split(",").length;
+        aimed = digits.length - listed;
+      }
+
+      // and which digit does the app actually accept?
+      let hit = -1;
+      for(let i = 0; i < digits.length; i++){
+        digits[i].click();
+        if(digits[i].classList.contains("found")){ hit = i; break; }
+      }
+      ok(hit !== -1, `L${level}: a digit is accepted`);
+      ok(aimed === hit,
+        `L${level}: hint points at digit ${aimed}, app accepts ${hit} (${shown}, asked "${asked[1]}", hint: "${hint}")`);
+    }
+  }
+}
+
 // ---------- D. all four toggle combinations complete a question ----------
 for(const findplace of [true, false]) for(const scaffold of [true, false]){
   const {d, $} = boot();

@@ -162,6 +162,13 @@ cannot see an animation.
 - **The favicon** is an inline SVG data URI. Every `#` in it must be written
   as `%23`. Left raw, the browser reads it as a fragment, truncates the URI
   and the icon vanishes with no error anywhere.
+- **The place hint is built from the place in the question, never from the
+  shape of the number.** It used to branch on "does this number have a comma"
+  and always walked left from it, so 5,950 to the nearest hundred was told how
+  to find thousands. Decimals had the mirror of it, always pointing right,
+  while the ones place on the whole-number level sits left of the point.
+  `placeHint()` works from `q.p` and `q.scale`, and `test/dom-test.js` follows
+  the hint's own directions to check where they land.
 - **`digitName` vs `name`** in `PLACES`: `name` is the place being rounded to
   ("hundred thousand"), `digitName` is the digit the student taps ("hundred
   thousands"). Getting these out of sync once made the app contradict itself.
