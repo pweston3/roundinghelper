@@ -213,6 +213,19 @@ cannot see an animation.
   ("hundred thousand"), `digitName` is the digit the student taps ("hundred
   thousands"). Getting these out of sync once made the app contradict itself.
 
+## The prose pages
+
+`index.html` is the app and stays one self-contained file. The prose pages are
+separate documents with their own URLs, because a hidden section inside the app
+shares one URL and search engines have nothing to rank. They share `site.css`
+and `outfit.woff2`, both same origin, so no third party is involved. `sw.js`
+precaches them, and its `VERSION` needs bumping whenever that list changes.
+
+Links to them live on the grown-ups page and on the prose pages, never on the
+kid's practice screen. Crawlers follow links inside hidden markup perfectly
+well, so putting grown-up navigation in front of a child buys nothing. The
+sitemap covers discovery.
+
 ## Testing
 
 No test framework. Verify changes by driving the real DOM headlessly:

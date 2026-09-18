@@ -63,6 +63,13 @@ piece of paper.
 node test/print-test.js
 ```
 
+`test/site-test.js` covers the prose pages, their structured data, the links
+between them, and that they work offline.
+
+```bash
+node test/site-test.js
+```
+
 `npm run eval` is the question-quality check. It samples thousands of real
 questions per level and asserts on the shape of the whole set, which is what
 catches a generator that lets a kid guess well without reasoning.

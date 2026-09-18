@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to Round Numbers to Any Place — Rounding Helper</title>
+<meta name="description" content="How to round whole numbers and decimals to any place, in four steps: find the place, find the two round numbers it sits between, look at the digit to its right, pick the closer one. Includes the exactly-5 rule and the mistake most kids make.">
+<link rel="canonical" href="https://roundinghelper.com/how-to-round/">
+<meta property="og:title" content="How to Round Numbers to Any Place">
+<meta property="og:description" content="The four steps, the exactly-5 rule, rounding decimals, and the mistake most kids make. Free practice, no ads and no accounts.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://roundinghelper.com/how-to-round/">
+<meta property="og:site_name" content="Rounding Helper">
+<meta property="og:image" content="https://roundinghelper.com/og.png?v=1">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/site.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "HowTo",
+      "@id": "https://roundinghelper.com/how-to-round/#howto",
+      "name": "How to round a number to a given place",
+      "description": "Round whole numbers and decimals to any place in four steps.",
+      "totalTime": "PT2M",
+      "step": [
+        {"@type": "HowToStep", "position": 1, "name": "Find the place",
+         "text": "Find the digit sitting in the place the question names. For the nearest hundred in 4,730, that is the 7."},
+        {"@type": "HowToStep", "position": 2, "name": "Find the two round numbers it sits between",
+         "text": "Keep that digit and everything to its left, and turn the rest to zeros. That is the lower one. The upper one is one place higher. For 4,730 to the nearest hundred, that is 4,700 and 4,800."},
+        {"@type": "HowToStep", "position": 3, "name": "Look at the digit just to the right",
+         "text": "One digit to the right of the place you are rounding to decides the answer. In 4,730 that is the 3. No other digit matters."},
+        {"@type": "HowToStep", "position": 4, "name": "Pick the closer one",
+         "text": "If that digit is 5 or more the place digit goes up by one. If it is less than 5 it stays. Either way every digit after it becomes a zero. 4,730 rounds to 4,700."}
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://roundinghelper.com/how-to-round/#faq",
+      "mainEntity": [
+        {"@type": "Question", "name": "What do you do when the deciding digit is exactly 5?",
+         "acceptedAnswer": {"@type": "Answer", "text": "The number sits exactly halfway between the two round numbers, so neither is closer. The convention taught in school is to go up. 4,750 rounds to 4,800. This is a rule rather than a fact about distance, and it is worth telling a child that plainly."}},
+        {"@type": "Question", "name": "How do you round a decimal?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Exactly the same four steps. Find the place, find the two round numbers it sits between, look at the digit to its right, pick the closer one. To round 3.47 to the nearest tenth, the tenths digit is 4, the neighbours are 3.4 and 3.5, the deciding digit is 7, and so it rounds to 3.5."}},
+        {"@type": "Question", "name": "Why do children round everything to the same place?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Because a worksheet usually asks for one place all the way down, so after the first question there is no reason to read the instruction again. The habit only shows up when the place changes between questions, which is why mixing places matters more than doing more of them."}}
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <a class="brand" href="/">
+      <svg width="30" height="15" viewBox="0 0 30 14" aria-hidden="true" focusable="false" style="flex:none">
+        <line x1="2" y1="7" x2="28" y2="7" stroke="var(--landmark)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="2" y1="2.5" x2="2" y2="11.5" stroke="var(--landmark)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="28" y1="2.5" x2="28" y2="11.5" stroke="var(--landmark)" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="10" cy="7" r="3.6" fill="var(--mark)"/>
+      </svg>
+      <span class="nm">Rounding Helper</span>
+    </a>
+    <a class="practise" href="/">Practice</a>
+  </div>
+
+  <h1>How to round numbers</h1>
+  <p class="lede">The same four steps work for every place, from the nearest ten to
+  the nearest hundred thousand, and for decimals too.</p>
+
+  <h2 id="the-four-steps">The four steps</h2>
+  <p>Take <span class="eg">4,730</span> to the nearest hundred.</p>
+  <ol>
+    <li><strong>Find the place.</strong> The hundreds digit is the 7:
+      <span class="eg">4,<u>7</u>30</span></li>
+    <li><strong>Find the two round numbers it sits between.</strong> Keep the 7 and
+      everything left of it, turn the rest to zeros, and that is the lower one.
+      The upper one is one hundred more: <span class="eg">4,700</span> and
+      <span class="eg">4,800</span></li>
+    <li><strong>Look at the digit just to the right.</strong> That single digit decides
+      it. Here it is the 3: <span class="eg">4,<u>7</u><b>3</b>0</span></li>
+    <li><strong>Pick the closer one.</strong> 3 is less than 5, so the 7 stays and
+      everything after it becomes a zero. <span class="eg">4,730 → 4,700</span></li>
+  </ol>
+
+  <div class="card">
+    <p>Step 2 is the one usually skipped, and it is the one that makes the rest make
+    sense. Once a child can see that the answer has to be either 4,700 or 4,800,
+    step 4 is a question about distance rather than a rule to remember.</p>
+  </div>
+
+  <h2 id="when-the-deciding-digit-is-exactly-5">When the deciding digit is exactly 5</h2>
+  <p>Then the number sits exactly halfway and neither neighbour is closer.
+  <span class="eg">4,750</span> is fifty away from 4,700 and fifty away from 4,800.</p>
+  <p>The convention taught in school is to go up, so 4,750 becomes 4,800. Worth saying
+  out loud to a child that this one is a rule people agreed on rather than something
+  they can work out, because a child who is genuinely reasoning about distance will
+  otherwise be confused by it, and reasonably so.</p>
+
+  <h2 id="rounding-decimals">Rounding decimals</h2>
+  <p>Nothing changes. To round <span class="eg">3.47</span> to the nearest tenth, the
+  tenths digit is the 4, the two neighbours are 3.4 and 3.5, and the deciding digit is
+  the 7. Seven is 5 or more, so the 4 goes up: <span class="eg">3.47 → 3.5</span></p>
+  <p>The one thing that trips people up is which direction to count from the decimal
+  point. Tenths, hundredths and thousandths are to the <em>right</em> of it. Ones, tens
+  and hundreds are to the <em>left</em>.</p>
+
+  <h2 id="the-mistake-most-children-make">The mistake most children make</h2>
+  <p>They round every question to the same place.</p>
+  <p>It is not carelessness. A worksheet normally asks for one place all the way down
+  the page, so after the first question there is no reason to read the instruction
+  again, and a child who stops reading it still scores full marks. The habit is
+  invisible until the place changes between questions, and then it looks like they
+  have forgotten how to round, when what they have actually learned is that the
+  instruction is safe to ignore.</p>
+  <p>The fix is mixing the places rather than doing more questions. A child who has to
+  find the place fresh every time cannot answer on autopilot.</p>
+
+  <h2 id="why-this-site-says-went-up-and-stayed">Why this site says "went up" and "stayed"</h2>
+  <p>Ordinary usage is "round up" and "round down", and that is what most people search
+  for. The practice here deliberately avoids both.</p>
+  <p>"Round down" suggests the number gets smaller in some visible way, and children
+  respond by changing the digit. Rounding down does not change it at all: the digit
+  stays exactly as it was and only the digits after it become zeros. Saying "it stayed"
+  describes what actually happens to the digit in front of them, and one common error
+  disappears with it.</p>
+
+  <h2 id="practising-it">Practising it</h2>
+  <p>Rounding Helper walks through these four steps one at a time, with a number line
+  that stays hidden until after the two neighbours have been named, so the answer
+  cannot be read off the screen before the thinking happens. It also prints worksheets
+  with an answer key.</p>
+  <p>It is free, has no ads and no accounts, and collects nothing.</p>
+  <p><a class="try" href="/">Start practising</a></p>
+
+  <div class="foot">
+    <a href="/">Practice</a><span class="sep">·</span><a href="/how-to-round/">How to round numbers</a>
+    <br>Free rounding practice for grades 4&ndash;5. No ads, no accounts, nothing collected.
+  </div>
+
+</div>
+</body>
+</html>

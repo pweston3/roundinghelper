@@ -15,16 +15,33 @@ const ok = (c, m) => { checks++; console.log((c ? "  ok   " : "  FAIL ") + m); i
 
 fs.rmSync(DIR, {recursive:true, force:true});
 fs.mkdirSync(DIR, {recursive:true});
-for(const f of ["index.html","sw.js","og.png","apple-touch-icon.png"]) {
-  fs.copyFileSync(path.join(SRC,f), path.join(DIR,f));
+// Copy whatever sw.js actually precaches, read out of sw.js itself. A fixed
+// list here silently 404s the moment the precache grows, addAll rejects, and
+// the worker never installs at all.
+const swSrc = fs.readFileSync(path.join(SRC, "sw.js"), "utf8");
+const precache = JSON.parse(
+  swSrc.match(/const PRECACHE = (\[[\s\S]*?\]);/)[1].replace(/\/\/[^\n]*/g, "")
+);
+for(const entry of [...precache, "sw.js"]) {
+  // "./" means the directory index; "./x/" means that directory's index
+  const rel = entry.replace(/^\.\//, "");
+  const from = path.join(SRC, rel.endsWith("/") || rel === "" ? rel + "index.html" : rel);
+  const to = path.join(DIR, rel.endsWith("/") || rel === "" ? rel + "index.html" : rel);
+  if(!fs.existsSync(from)) throw new Error("sw.js precaches a file that does not exist: " + entry);
+  fs.mkdirSync(path.dirname(to), {recursive:true});
+  fs.copyFileSync(from, to);
 }
 
-const TYPES = {".html":"text/html", ".js":"text/javascript", ".png":"image/png"};
+const TYPES = {".html":"text/html", ".js":"text/javascript", ".png":"image/png",
+               ".css":"text/css", ".woff2":"font/woff2"};
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split("?")[0]);
-  if(p === "/") p = "/index.html";
+  // a trailing slash means that directory's index, the way GitHub Pages serves it
+  if(p.endsWith("/")) p += "index.html";
   const file = path.join(DIR, p);
-  if(!file.startsWith(DIR) || !fs.existsSync(file)){ res.writeHead(404); return res.end("nope"); }
+  if(!file.startsWith(DIR) || !fs.existsSync(file) || fs.statSync(file).isDirectory()){
+    res.writeHead(404); return res.end("nope");
+  }
   res.writeHead(200, {"Content-Type": TYPES[path.extname(file)] || "application/octet-stream",
                       // what GitHub Pages actually sends. With "no-cache" here the
                       // suite cannot see a stale page being served, and once did not.
@@ -62,9 +79,10 @@ const server = http.createServer((req, res) => {
     const c = await caches.open(keys[0]);
     return {keys, urls: (await c.keys()).map(r => new URL(r.url).pathname).sort()};
   });
-  ok(cached.keys.length === 1 && cached.keys[0] === "rounding-v2",
-    `one cache named rounding-v2 (got ${JSON.stringify(cached.keys)})`);
-  for(const want of ["/", "/index.html", "/og.png", "/apple-touch-icon.png"]) {
+  ok(cached.keys.length === 1 && /^rounding-/.test(cached.keys[0]),
+    `one cache, named for the version (got ${JSON.stringify(cached.keys)})`);
+  for(const entry of precache) {
+    const want = entry.replace(/^\./, "");
     ok(cached.urls.includes(want), `precached ${want}`);
   }
   ok(offsite.length === 0, `no off-site requests (${JSON.stringify(offsite)})`);
@@ -107,15 +125,18 @@ const server = http.createServer((req, res) => {
   // ---- 4. version bump evicts the old cache ----
   console.log("\n[4] worker version bumped");
   const sw = fs.readFileSync(path.join(DIR,"sw.js"), "utf8");
-  fs.writeFileSync(path.join(DIR,"sw.js"), sw.replace('const VERSION = "v2"', 'const VERSION = "v3"'));
+  // bump whatever the version happens to be, rather than naming it
+  const cur = sw.match(/const VERSION = "([^"]+)"/)[1];
+  const next = "test-" + cur;
+  fs.writeFileSync(path.join(DIR,"sw.js"), sw.replace(`const VERSION = "${cur}"`, `const VERSION = "${next}"`));
   await page.goto(base, {waitUntil:"load"});
   await page.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r && r.update()));
   await page.waitForTimeout(2500);
   await page.goto(base, {waitUntil:"load"});
   await page.waitForTimeout(1500);
   const keys2 = await page.evaluate(() => caches.keys());
-  ok(keys2.includes("rounding-v3"), `v3 cache created (got ${JSON.stringify(keys2)})`);
-  ok(!keys2.includes("rounding-v2"), "old cache deleted, no stale assets left behind");
+  ok(keys2.includes("rounding-" + next), `the new cache is created (got ${JSON.stringify(keys2)})`);
+  ok(!keys2.includes("rounding-" + cur), "old cache deleted, no stale assets left behind");
 
   // ---- 5. still offline-capable after the upgrade ----
   console.log("\n[5] offline again after upgrading");
