@@ -77,6 +77,29 @@ Why it's ordered this way:
   old bare 1.9s setTimeout gave no clue why the screen was about to change
   and no way to hurry it.
 
+## The dot and the celebrations
+
+The marker dot is the one bit of personality on the practice screen, and it
+is personality through motion only: no face, no name, no mascot, which the
+5th graders at the top of the range would read as babyish. It drops onto the
+rail when the neighbors are named, breathes while the last question is open,
+teeters when the number sits within 10% of halfway (a nudge to look closely,
+not a tell), hops toward the winning neighbor on a correct answer and shakes
+on a miss. It always returns to its true position; the gap bar shows the
+real distance.
+
+A correct answer also gets confetti from the dot (DOM spans, no canvas, no
+images), a star that flies from the winning button to the tally, and a
+headline drawn from `CHEERS` that never repeats twice running. Correct
+answers in a row build `state.streak` (persisted in `rounding-v2`, reset by
+a miss); at 3, 5, 7, 10, 15 and every ten after, the line names the streak,
+the card pulses `--yes-soft` and the burst doubles. The explanation line
+under the headline is untouched by any of this.
+
+All of it sits inside `prefers-reduced-motion: no-preference`; `calm()` in
+the script skips the confetti and the star flight when the OS asks for
+reduced motion. Nothing here changes on a timer without a button first.
+
 ## Copy rules
 
 - Written for a 9-year-old. Short sentences, no em-dash clauses, "less than 5"
