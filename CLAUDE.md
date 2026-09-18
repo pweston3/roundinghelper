@@ -228,9 +228,9 @@ shares one URL and search engines have nothing to rank. They share `site.css`
 and `outfit.woff2`, both same origin, so no third party is involved. `sw.js`
 precaches them, and its `VERSION` needs bumping whenever that list changes.
 
-The prose pages hang off the grown-ups page, so their topbar carries the same
-"Grown-ups" button the app does and returns there rather than to the practice
-screen. `/#grown-ups` is a real address: `setMode` writes it with
+The prose pages follow the same navigation rule as every other grown-up
+screen: the topbar exits the zone, an in-content `.backlink` returns to the
+parent. `/#grown-ups` is a real address: `setMode` writes it with
 `replaceState` on the way in and clears it on the way out, so a link can open
 that screen directly and leaving cannot strand a hash that would reopen it on
 the next reload. A reader should land back where they were, not on a child's
@@ -240,6 +240,25 @@ Links to them live on the grown-ups page and on the prose pages, never on the
 kid's practice screen. Crawlers follow links inside hidden markup perfectly
 well, so putting grown-up navigation in front of a child buys nothing. The
 sitemap covers discovery.
+
+## Navigation — one rule
+
+**The topbar's right-hand button crosses the zone boundary and names where it
+goes.** On practice it reads "Grown-ups". On every grown-up screen, including
+the prose pages, it reads "← Practice". It used to say "Grown-ups" everywhere,
+which made one control mean three things: go there, you are there, and go back
+there.
+
+The star tally shows only in the kid's zone. A score means nothing on a
+grown-up screen, and hiding it is also what makes a prose page's topbar match
+the app's, which is what made them feel like different sites.
+
+Returning to a parent is a separate job, done by an in-content `.backlink`
+reading "← For parents and teachers". Worksheet and Explore both said "Back to
+practice" while calling `setMode("hub")`, for as long as they existed. The hub
+has no backlink at all now: the topbar already does that, and two controls for
+one job is what made this confusing to begin with. `test/dom-test.js` clicks
+each backlink and checks its words against where it actually lands.
 
 ## Testing
 

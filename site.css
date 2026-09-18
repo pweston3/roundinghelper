@@ -62,7 +62,15 @@ body{
   box-shadow:0 1px 3px var(--shadow);display:inline-flex;align-items:center;
 }
 
-h1{font-size:30px;line-height:1.2;font-weight:700;margin:22px 0 6px}
+/* Matches the app's in-card back links, which return to the grown-ups page
+   the same way. The topbar button crosses the zone; this returns to the parent. */
+.backlink{
+  display:inline-block;font-size:15px;font-weight:500;color:var(--landmark);
+  text-decoration:none;padding:10px 2px;min-height:44px;line-height:24px;
+}
+.backlink:hover{text-decoration:underline;text-underline-offset:3px}
+
+h1{font-size:30px;line-height:1.2;font-weight:700;margin:10px 0 6px}
 .lede{font-size:18px;color:var(--muted);margin:0 0 26px}
 h2{font-size:21px;font-weight:700;margin:34px 0 8px;color:var(--landmark)}
 h3{font-size:17px;font-weight:700;margin:22px 0 6px}

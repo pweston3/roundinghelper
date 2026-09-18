@@ -337,6 +337,49 @@ ok(/@font-face/.test(html) && /src:url\(data:font\/woff2;base64,/.test(html), "f
     "turning it off is saved too");
 }
 
+// ---------- B5. navigation says where it goes ----------
+// Worksheet and Explore both read "Back to practice" and both returned to the
+// grown-ups screen. A label that names the wrong destination is worse than no
+// label, so these check words against behavior rather than against each other.
+{
+  const {d, $} = boot();
+  // jsdom does no layout, so offsetParent is always null; the `hidden` property
+  // is what the code actually sets and the only honest thing to read here
+  const shown = el => !!el && !el.hidden;
+  const bar = () => $("mHub").textContent.replace(/\s+/g, " ").trim();
+
+  $("introStart").click();                    // past the first-visit walkthrough
+  ok(!$("practice").hidden, "a fresh visit reaches the practice screen");
+  ok(bar() === "Grown-ups", `on practice the button enters the grown-up zone (${bar()})`);
+  ok(shown($("tally")), "and the kid's star tally is on show");
+
+  $("mHub").click();
+  ok(!$("hub").hidden, "pressing it opens the grown-ups screen");
+  ok(bar() === "\u2190 Practice", `where the same button becomes the exit (${bar()})`);
+  ok(!shown($("tally")), "and the star tally is put away");
+  ok($("hub").querySelectorAll(".backlink").length === 0,
+    "the hub carries no second back link doubling the topbar");
+
+  $("mHub").click();
+  ok(!$("practice").hidden, "pressing the exit returns to practice");
+
+  // every in-card back link must land where its words say
+  for(const [tool, screen, label] of [["mSheet", "sheetview", "worksheet"],
+                                      ["mLab", "lab", "explore"]]){
+    $("mHub").click();
+    $(tool).click();
+    ok(!$(screen).hidden, `${label} opens`);
+    ok(bar() === "\u2190 Practice", `${label}: the topbar still offers the way out (${bar()})`);
+    const back = $(screen).querySelector(".backlink");
+    const words = back.textContent.replace(/\s+/g, " ").trim();
+    back.click();
+    const landed = !$("hub").hidden ? "the grown-ups screen"
+                 : !$("practice").hidden ? "practice" : "somewhere else";
+    ok(/parents and teachers/i.test(words) === (landed === "the grown-ups screen"),
+      `${label}: "${words}" lands on ${landed}`);
+  }
+}
+
 // ---------- C. instruction text matches the digit the app accepts ----------
 const WHOLE = ["ones","tens","hundreds","thousands","ten thousands","hundred thousands","millions"];
 const DEC = ["tenths","hundredths","thousandths"];

@@ -634,7 +634,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <!-- GROWN-UPS HUB -->
   <section id="hub" hidden>
     <div class="card hub">
-      <button class="backlink" id="back0">&larr; Back to practice</button>
       <h2>For parents and teachers</h2>
       <p class="quiet">Step-by-step rounding practice for grades 4&ndash;5, free to use and free to share.</p>
       <div class="trust"><span>No ads</span><span>No accounts</span><span>Nothing collected</span><span>Works offline</span></div>
@@ -693,7 +692,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <!-- WORKSHEET -->
   <section id="sheetview" hidden>
     <div class="card">
-      <button class="backlink" id="back2">&larr; Back to practice</button>
+      <button class="backlink" id="back2">&larr; For parents and teachers</button>
       <div id="sheetControls">
         <div class="sheet-opts" id="sheetPlaces"></div>
         <div class="sheet-bar">
@@ -723,7 +722,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <!-- EXPLORE -->
   <section id="lab" hidden>
     <div class="card">
-      <button class="backlink" id="back1">&larr; Back to practice</button>
+      <button class="backlink" id="back1">&larr; For parents and teachers</button>
       <div class="lab-row">
         <input type="number" id="labNum" value="4730" min="0" max="9999999" step="any" inputmode="decimal" aria-label="Type any number">
         <select id="labPlace" aria-label="Round to the nearest">
@@ -1819,7 +1818,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     $("hub").hidden = which !== "hub";
     $("lab").hidden = which !== "lab";
     $("sheetview").hidden = which !== "sheet";
-    $("mHub").setAttribute("aria-pressed", which === "practice" ? "false" : "true");
+    // One rule for the whole site: this button crosses the zone boundary and
+    // names where it goes. It used to say "Grown-ups" everywhere, so it meant
+    // "go there" on the practice screen, "you are there" on the grown-ups
+    // screen, and "go back there" on a prose page.
+    var inKidZone = which === "practice" || which === "intro";
+    $("mHub").innerHTML = inKidZone ? "Grown-ups" : "&larr; Practice";
+    $("mHub").setAttribute("aria-label",
+      inKidZone ? "For parents and teachers" : "Back to practice");
+    // The star tally is the kid's score and means nothing on a grown-up screen.
+    // Hiding it is also what makes a prose page's topbar match the app's.
+    $("tally").hidden = !inKidZone;
     if(which === "lab") updateLab();
     // Keep the URL honest so /#grown-ups is a real address a prose page can
     // link to, and so leaving the hub does not leave a stale hash behind that
@@ -1833,12 +1842,16 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     }catch(e){}
     window.scrollTo(0,0);
   }
-  $("mHub").onclick = function(){ setMode("hub"); };
+  $("mHub").onclick = function(){
+    var inKidZone = !$("practice").hidden || !$("intro").hidden;
+    setMode(inKidZone ? "hub" : "practice");
+  };
   $("mHome").onclick = function(){ setMode(state.seenIntro ? "practice" : "intro"); };
-  $("back0").onclick = function(){ setMode("practice"); };
   $("mLab").onclick = function(){ setMode("lab"); };
   $("mSheet").onclick = function(){ setMode("sheet"); buildSheet(); };
   $("mIntro").onclick = function(){ setMode("intro"); };
+  // These return to the grown-ups page, which is where they were opened from.
+  // They said "Back to practice" while doing it, for as long as they existed.
   $("back1").onclick = $("back2").onclick = function(){ setMode("hub"); };
   $("introStart").onclick = function(){
     state.seenIntro = true; save(); setMode("practice");

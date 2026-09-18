@@ -84,17 +84,30 @@ const ok=(c,m)=>{checks++;console.log((c?"  ok   ":"  FAIL ")+m);if(!c)fails++;}
   await p.click("#mHub"); await p.waitForTimeout(200);
   ok(new URL(p.url()).hash === "#grown-ups", `opening the grown-ups screen names itself in the URL (${new URL(p.url()).hash || "none"})`);
 
+  // the same button now exits, rather than saying "Grown-ups" while you are on it
+  const hubBar = (await p.textContent("#mHub")).replace(/\s+/g," ").trim();
+  ok(hubBar === "\u2190 Practice", `and the topbar button flips to the exit (${hubBar})`);
+  ok(!(await p.locator("#tally").isVisible()), "the kid's star tally is not shown on a grown-up screen");
+  ok((await p.$$eval("#hub .backlink", e => e.length)) === 0,
+    "and the hub has no second back link doubling the topbar");
+
   await p.click("#hub .hubfoot a"); await p.waitForTimeout(400);
   ok(p.url().includes("/how-to-round/"), "its link reaches the prose page");
-  const backLabel = (await p.textContent(".topbar .practice")).trim();
-  ok(backLabel === "Grown-ups", `the prose page's topbar carries the same label as the app's (${backLabel})`);
+  // one rule everywhere: the topbar button crosses the zone and names where it
+  // goes, so a prose page's topbar reads the same as any grown-up screen's
+  const proseBar = (await p.textContent(".topbar .practice")).replace(/\s+/g," ").trim();
+  ok(proseBar === "\u2190 Practice", `the prose page's topbar exits the zone (${proseBar})`);
 
-  await p.click(".topbar .practice"); await p.waitForTimeout(500);
-  ok(await p.locator("#hub").isVisible(), "and it lands back on the grown-ups screen, not the practice screen");
+  // and returning to the parent is the in-content link, as on the worksheet
+  const proseBack = (await p.textContent(".backlink")).replace(/\s+/g," ").trim();
+  ok(proseBack === "\u2190 For parents and teachers",
+    `it returns to its parent by an in-content link (${proseBack})`);
+  await p.click(".backlink"); await p.waitForTimeout(500);
+  ok(await p.locator("#hub").isVisible(), "which lands on the grown-ups screen, not the kid's");
   ok(!(await p.locator("#practice").isVisible()), "the kid's screen is not what a grown-up gets dropped onto");
 
   // leaving must not strand the hash, or a reload would reopen the hub
-  await p.click("#back0"); await p.waitForTimeout(250);
+  await p.click("#mHub"); await p.waitForTimeout(250);
   ok(new URL(p.url()).hash === "", `leaving clears the hash (${new URL(p.url()).hash || "none"})`);
   await p.reload(); await p.waitForTimeout(300);
   ok(await p.locator("#practice").isVisible(), "so a reload returns to practice");
