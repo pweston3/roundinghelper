@@ -1,6 +1,6 @@
 # Rounding Helper
 
-Free step-by-step rounding practice for roughly grades 4–5, at
+Free rounding practice for roughly grades 4–5, at
 [roundinghelper.com](https://roundinghelper.com).
 
 Students round whole numbers up to 1,000,000 and decimals to the hundredth,

@@ -130,6 +130,14 @@ whether the button is on screen.
   practicing, neighbor, color, center. `test/site-test.js` checks the rendered
   text of every page. `OFL.txt` and `LICENSE` are verbatim legal texts and are
   left alone.
+- **Never say "step-by-step" in the metadata.** In math search that phrase
+  belongs to the answer engines, where it means "we show you the worked
+  solution." Here the child performs the steps, so it advertised the opposite
+  of what the app does and read like one more calculator. The description names
+  the action instead: "Kids tap through each step on a number line."
+  Deliberately not a "game" either. It is not one, a kid arriving expecting one
+  meets a four-step teaching sequence, and the term is held by sites built on
+  the characters and timers the dot was designed to avoid.
 - **A link is an invitation, so don't phrase one as a failure.** The guide was
   linked as "The mistake most children make", which is a fine heading on the
   page and a poor thing to ask someone to click.
