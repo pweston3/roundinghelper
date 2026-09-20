@@ -13,11 +13,12 @@ one `<style>` block, the typeface embedded as a base64 WOFF2 data URI.
 
 Deployed on GitHub Pages. Editing means editing `index.html` and pushing.
 
-Two other files sit alongside it, and a visitor's browser requests neither.
-`og.png` is the link-preview image, fetched only by a sharing platform's
+Three other files sit alongside it, and a visitor's browser requests none of
+them. `og.png` is the link-preview image, fetched only by a sharing platform's
 crawler. `apple-touch-icon.png` is the iOS home-screen icon, fetched only
-when someone adds the site to a home screen. Their sources are in `tools/`,
-each with regeneration instructions in a comment.
+when someone adds the site to a home screen. `favicon.ico` exists for search
+crawlers, which cannot read the inline data URI the browser uses. Their sources
+are in `tools/`, each with regeneration instructions in a comment.
 
 `sw.js` is the offline cache. It is the only same-origin request the page
 makes beyond itself, and it sends nothing anywhere.
@@ -211,6 +212,22 @@ whether the button is on screen.
 - **The favicon** is an inline SVG data URI. Every `#` in it must be written
   as `%23`. Left raw, the browser reads it as a fragment, truncates the URI
   and the icon vanishes with no error anywhere.
+- **A data URI favicon alone gets the generic globe in Google Search.** A
+  crawler will not read `data:`, it needs an icon at a URL it can fetch, so the
+  tab looked right for months while the search result showed a globe next to
+  two competitors with real icons. `/favicon.ico` (48 and 32, built by
+  `tools/make-favicon.js` from `tools/favicon.html`) is declared *before* the
+  data URI; browsers prefer the SVG and never fetch it, so the page still makes
+  exactly one request. It is full-bleed and square for the same reason
+  `apple-touch-icon.png` is: Google masks favicons into a circle on mobile.
+  `test/site-test.js` fetches every declared icon and fails on a `data:`-only
+  page, on a non-200, and on an `.ico` that is not really an ICO container.
+  Favicons in Search update only when the home page is recrawled, so expect
+  days rather than minutes.
+- **`max-image-preview:large` is opt-in.** Without the `robots` meta Google
+  caps how large a preview it will show. Both pages carry
+  `index, follow, max-image-preview:large, max-snippet:-1`, and the same test
+  checks for it and that nothing has accidentally gone `noindex`.
 - **The place hint is built from the place in the question, never from the
   shape of the number.** It used to branch on "does this number have a comma"
   and always walked left from it, so 5,950 to the nearest hundred was told how

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<!--
+  Source for favicon.ico, the icon Google Search shows beside the result.
+
+  The page also carries an inline SVG data URI favicon, and browsers prefer it,
+  so this file exists for crawlers rather than for tabs. Google Search will not
+  read a data: URI: it needs an icon at a URL it can fetch, and without one it
+  falls back to the generic globe. The .ico is the conventional filename and the
+  one Google looks for by default.
+
+  Rendered at 48 and 32, then wrapped into a two-image .ico:
+
+    node tools/make-favicon.js
+
+  Full-bleed and square on purpose, like apple-touch-icon.png. Google puts
+  favicons inside a circular container on mobile, so rounding the corners first
+  just carves notches out of the result. The geometry is the 32px data URI
+  scaled by 1.5, because that one was already tuned to stay legible at 16px.
+-->
+<html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0;width:48px;height:48px;overflow:hidden}
+  svg{display:block}
+</style></head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect width="48" height="48" fill="#15697A"/>
+  <g stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round">
+    <line x1="9.75" y1="24" x2="38.25" y2="24"/>
+    <line x1="9.75" y1="17.25" x2="9.75" y2="30.75"/>
+    <line x1="38.25" y1="17.25" x2="38.25" y2="30.75"/>
+  </g>
+  <circle cx="20.25" cy="24" r="7.2" fill="#FF6E9C" stroke="#15697A" stroke-width="3"/>
+</svg>
+</body></html>

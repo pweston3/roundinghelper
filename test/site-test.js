@@ -6,7 +6,10 @@ const {chromium} = require("playwright");
 const http = require("http"); const fs = require("fs"); const path = require("path");
 const SRC = path.join(__dirname, ".."), PORT = 8755;
 const T = {".html":"text/html",".css":"text/css",".js":"text/javascript",".png":"image/png",
-           ".woff2":"font/woff2",".xml":"application/xml",".txt":"text/plain"};
+           ".woff2":"font/woff2",".xml":"application/xml",".txt":"text/plain",
+           // GitHub Pages serves .ico as image/x-icon; match it, or the test
+           // server hands back octet-stream and the icon check reads as a bug.
+           ".ico":"image/x-icon"};
 const server = http.createServer((req,res)=>{
   let p = decodeURIComponent(req.url.split("?")[0]);
   if(p.endsWith("/")) p += "index.html";
@@ -128,6 +131,46 @@ const ok=(c,m)=>{checks++;console.log((c?"  ok   ":"  FAIL ")+m);if(!c)fails++;}
     }
   }
 
+  // Google Search shows the generic globe unless it can fetch the icon from a
+  // URL. The page had only a data: URI, which browsers render happily and
+  // crawlers cannot read, so the tab looked right while the search result did
+  // not. Declaring one is not enough; it has to actually serve.
+  console.log("\n[favicon a crawler can fetch]");
+  {
+    for(const u of [base, base+"how-to-round/"]){
+      await p.goto(u); await p.waitForTimeout(150);
+      const icons = await p.evaluate(() =>
+        [...document.querySelectorAll('link[rel~="icon"],link[rel="shortcut icon"]')]
+          .map(l => l.getAttribute("href")));
+      const fetchable = icons.filter(h => h && !/^data:/i.test(h));
+      const where = u.replace(base, "/");
+      ok(fetchable.length > 0,
+        `${where} declares an icon at a URL, not only a data: URI`);
+      for(const href of fetchable){
+        const res = await p.request.get(new URL(href, u).href);
+        ok(res.status() === 200, `${where}: ${href} serves (got ${res.status()})`);
+        const type = (res.headers()["content-type"] || "");
+        ok(/image|icon/.test(type), `${where}: ${href} serves as an image (${type})`);
+        const body = await res.body();
+        // A real ICO, not an HTML 404 page with the right extension.
+        if(href.endsWith(".ico")){
+          ok(body.readUInt16LE(0) === 0 && body.readUInt16LE(2) === 1,
+            `${where}: ${href} is a real ICO container`);
+          ok(body.readUInt16LE(4) >= 1, `${where}: ${href} holds at least one image`);
+        }
+      }
+      // Large image previews are opt-in; without this Google caps the preview.
+      const robots = await p.evaluate(() => {
+        const m = document.querySelector('meta[name="robots"]');
+        return m ? m.getAttribute("content") : null;
+      });
+      ok(robots && /max-image-preview:large/.test(robots),
+        `${where} allows a large image preview (${robots || "no robots meta"})`);
+      ok(!robots || !/\bnoindex\b/.test(robots),
+        `${where} is not accidentally noindex (${robots})`);
+    }
+  }
+
   console.log("\n[offline]");
   await p.goto(base);
   await p.waitForFunction(()=>navigator.serviceWorker.controller!==null,null,{timeout:15000});
@@ -135,7 +178,12 @@ const ok=(c,m)=>{checks++;console.log((c?"  ok   ":"  FAIL ")+m);if(!c)fails++;}
     const k=await caches.keys(); const c=await caches.open(k[0]);
     return {cache:k[0], urls:(await c.keys()).map(r=>new URL(r.url).pathname).sort()};
   });
-  ok(cached.cache==="rounding-v3", `cache version bumped (${cached.cache})`);
+  // Read the version out of sw.js rather than writing it down here. Hard-coding
+  // it meant every routine VERSION bump failed this test for no reason, which
+  // trains you to edit the number until the day it is the real failure.
+  const swVersion = fs.readFileSync(path.join(SRC,"sw.js"),"utf8").match(/const VERSION = "([^"]+)"/)[1];
+  ok(cached.cache===`rounding-${swVersion}`,
+    `the live cache matches sw.js (${cached.cache} vs rounding-${swVersion})`);
   for(const want of ["/how-to-round/","/site.css","/outfit.woff2"]) {
     ok(cached.urls.includes(want), `precached ${want}`);
   }

@@ -11,10 +11,10 @@
 // Everything here is same-origin. The worker never touches a third-party URL,
 // and nothing is sent anywhere.
 
-const VERSION = "v3";
+const VERSION = "v4";
 const CACHE = "rounding-" + VERSION;
 const PRECACHE = [
-  "./", "./index.html", "./og.png", "./apple-touch-icon.png",
+  "./", "./index.html", "./og.png", "./apple-touch-icon.png", "./favicon.ico",
   // the prose pages and what they need, so they work offline too
   "./how-to-round/", "./site.css", "./outfit.woff2"
 ];

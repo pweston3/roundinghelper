@@ -33,7 +33,7 @@ for(const entry of [...precache, "sw.js"]) {
 }
 
 const TYPES = {".html":"text/html", ".js":"text/javascript", ".png":"image/png",
-               ".css":"text/css", ".woff2":"font/woff2"};
+               ".css":"text/css", ".woff2":"font/woff2", ".ico":"image/x-icon"};
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split("?")[0]);
   // a trailing slash means that directory's index, the way GitHub Pages serves it
